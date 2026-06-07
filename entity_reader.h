@@ -136,6 +136,7 @@ struct FrameState {
     uintptr_t entity_list = 0;
     std::string map_name;
     float map_scale = 5.0f;
+    float current_time = 0.0f;
 };
 
 // -----------------------------------------------------------------------
@@ -183,6 +184,7 @@ public:
                     cached_map_name = map_name;
                 }
             }
+            state.current_time = g_memory->read<float>(global_vars + 0x2C);
         }
         state.map_scale = cached_map_scale; // Assign the cached scale to the frame state
         state.map_name = cached_map_name;
@@ -392,7 +394,10 @@ private:
 
         player.is_scoped = g_memory->read<bool>(pawn + g_offsets.C_CSPlayerPawn.m_bIsScoped);
         float flash_alpha = g_memory->read<float>(pawn + g_offsets.C_CSPlayerPawnBase.m_flFlashOverlayAlpha);
-        player.is_flashed = (flash_alpha > 0.0f);
+        float flash_duration = g_memory->read<float>(pawn + g_offsets.C_CSPlayerPawnBase.m_flFlashDuration);
+        float alpha_norm = (std::max)(0.0f, (std::min)(1.0f, flash_alpha));
+        player.flash_duration = alpha_norm * flash_duration;
+        player.is_flashed = (player.flash_duration > 0.0f);
         uintptr_t money_services = g_memory->read<uintptr_t>(controller + g_offsets.CCSPlayerController.m_pInGameMoneyServices);
         player.money = money_services ? g_memory->read<int>(money_services + g_offsets.CCSPlayerController_InGameMoneyServices.m_iAccount) : 0;
 

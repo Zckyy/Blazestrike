@@ -42,6 +42,8 @@ struct Offsets {
     struct {
         uint32_t m_flFlashOverlayAlpha;
         uint32_t m_pWeaponServices;
+        uint32_t m_flFlashDuration;
+        uint32_t m_flFlashBangTime;
     } C_CSPlayerPawnBase;
     struct {
         uint32_t m_unpredictableBaseTick;
@@ -160,6 +162,8 @@ private:
 
             C_CSPlayerPawn.m_bIsScoped = cs["C_CSPlayerPawn"]["fields"]["m_bIsScoped"];
             C_CSPlayerPawnBase.m_flFlashOverlayAlpha = cs["C_CSPlayerPawnBase"]["fields"]["m_flFlashOverlayAlpha"];
+            C_CSPlayerPawnBase.m_flFlashDuration = cs["C_CSPlayerPawnBase"]["fields"]["m_flFlashDuration"];
+            C_CSPlayerPawnBase.m_flFlashBangTime = cs["C_CSPlayerPawnBase"]["fields"]["m_flFlashBangTime"];
             C_BaseModelEntity.m_vecViewOffset =
                 cs["C_BaseModelEntity"]["fields"]["m_vecViewOffset"];
 

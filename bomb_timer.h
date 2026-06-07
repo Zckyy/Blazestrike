@@ -172,6 +172,39 @@ public:
 
         ImGui::End();
 
+        // Draw large top-center screen warning if defusing
+        if (is_bomb_planted && being_defused) {
+            float warning_fs = 26.0f; // Large, highly visible font
+            char warning_text[256];
+            ImVec4 warning_color;
+
+            if (defuse_left < time_left) {
+                snprintf(warning_text, sizeof(warning_text), "WARNING: ENEMY IS DEFUSING (THEY WILL DEFUSE IN TIME! - %.2fs)", defuse_left);
+                warning_color = {1.0f, 0.1f, 0.1f, 1.0f}; // Red warning
+            } else {
+                snprintf(warning_text, sizeof(warning_text), "WARNING: ENEMY IS DEFUSING (TOO LATE! - %.2fs)", defuse_left);
+                warning_color = {0.1f, 1.0f, 0.1f, 1.0f}; // Green warning
+            }
+
+            ImFont* draw_font = font ? font : ImGui::GetFont();
+            ImVec2 text_size = draw_font->CalcTextSizeA(warning_fs, FLT_MAX, 0.0f, warning_text);
+
+            float wx = ((float)screen_w - text_size.x) * 0.5f;
+            float wy = 60.0f; // Top center
+
+            ImDrawList* d = ImGui::GetBackgroundDrawList();
+            ImU32 col = ImGui::ColorConvertFloat4ToU32(warning_color);
+            ImU32 shadow_col = IM_COL32(0, 0, 0, 240);
+
+            // Draw shadow/outline for readability against any background
+            d->AddText(draw_font, warning_fs, {wx - 2, wy}, shadow_col, warning_text);
+            d->AddText(draw_font, warning_fs, {wx + 2, wy}, shadow_col, warning_text);
+            d->AddText(draw_font, warning_fs, {wx, wy - 2}, shadow_col, warning_text);
+            d->AddText(draw_font, warning_fs, {wx, wy + 2}, shadow_col, warning_text);
+            
+            d->AddText(draw_font, warning_fs, {wx, wy}, col, warning_text);
+        }
+
         if (font) ImGui::PopFont();
     }
 

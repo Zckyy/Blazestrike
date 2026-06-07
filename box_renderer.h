@@ -114,7 +114,47 @@ public:
             }
 
             if (g_settings.draw_flashed && p.is_flashed) {
-                draw_flag_text("FLASHED", apply_opacity(IM_COL32(255, 180, 100, 255), opacity));
+                float flashed_fs = flag_fs * 1.35f; // 35% larger
+                if (g_settings.name_shadow) {
+                    d->AddText(font, flashed_fs, {right_x - 1, current_y}, shadow_col, "FLASHED");
+                    d->AddText(font, flashed_fs, {right_x + 1, current_y}, shadow_col, "FLASHED");
+                    d->AddText(font, flashed_fs, {right_x, current_y - 1}, shadow_col, "FLASHED");
+                    d->AddText(font, flashed_fs, {right_x, current_y + 1}, shadow_col, "FLASHED");
+                }
+                d->AddText(font, flashed_fs, {right_x, current_y}, apply_opacity(IM_COL32(255, 180, 100, 255), opacity), "FLASHED");
+                current_y += (flashed_fs + 2.0f);
+
+                // Draw circular countdown timer above the player's head
+                if (p.visible[BONE_HEAD]) {
+                    ImVec2 head_pos = p.screens[BONE_HEAD];
+                    ImVec2 circle_center = { head_pos.x, head_pos.y - 25.0f };
+                    float radius = 14.0f;
+
+                    // Background dark circle
+                    d->AddCircleFilled(circle_center, radius, apply_opacity(IM_COL32(20, 20, 20, 160), opacity), 32);
+                    d->AddCircle(circle_center, radius, apply_opacity(IM_COL32(60, 60, 60, 200), opacity), 32, 1.5f);
+
+                    // Circular progress arc representing remaining flash duration (max full flash is ~4.8s)
+                    float pct = std::clamp(p.flash_duration / 4.8f, 0.0f, 1.0f);
+                    if (pct > 0.01f) {
+                        d->PathArcTo(circle_center, radius, -3.14159f * 0.5f, -3.14159f * 0.5f + (pct * 3.14159f * 2.0f), 32);
+                        d->PathStroke(apply_opacity(IM_COL32(255, 180, 50, 255), opacity), ImDrawFlags_None, 2.5f);
+                    }
+
+                    // Numeric remaining seconds text inside the circle
+                    char dur_str[16];
+                    snprintf(dur_str, sizeof(dur_str), "%.1f", p.flash_duration);
+                    float inner_fs = 10.0f;
+                    ImVec2 ts = font->CalcTextSizeA(inner_fs, FLT_MAX, 0.0f, dur_str);
+                    ImVec2 text_pos = { circle_center.x - ts.x * 0.5f, circle_center.y - ts.y * 0.5f };
+
+                    // Text shadow
+                    d->AddText(font, inner_fs, {text_pos.x - 1, text_pos.y}, shadow_col, dur_str);
+                    d->AddText(font, inner_fs, {text_pos.x + 1, text_pos.y}, shadow_col, dur_str);
+                    d->AddText(font, inner_fs, {text_pos.x, text_pos.y - 1}, shadow_col, dur_str);
+                    d->AddText(font, inner_fs, {text_pos.x, text_pos.y + 1}, shadow_col, dur_str);
+                    d->AddText(font, inner_fs, text_pos, apply_opacity(IM_COL32(255, 255, 255, 255), opacity), dur_str);
+                }
             }
         }
     }

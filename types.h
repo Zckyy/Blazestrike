@@ -124,6 +124,7 @@ struct PlayerVisuals {
 
     bool is_scoped = false;
     bool is_flashed = false;
+    float flash_duration = 0.0f;
     int money = 0;
 };
 
