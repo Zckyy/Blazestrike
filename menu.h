@@ -118,281 +118,270 @@ private:
     void render_tab_esp() {
         ImGui::Spacing();
         ImGui::Checkbox("ESP Enabled", &g_settings.esp_enabled);
+        ImGui::SameLine();
+        ImGui::Checkbox("Show Teammates", &g_settings.draw_teammates);
         ImGui::Separator();
 
-        // ================================================================
-        //  ESP THEME
-        // ================================================================
-        ImVec4 theme_accent = {g_settings.esp_theme_color[0], g_settings.esp_theme_color[1],
-                               g_settings.esp_theme_color[2], g_settings.esp_theme_color[3]};
-        ImGui::TextColored(theme_accent, "ESP Theme Color");
-        ImGui::Checkbox("Use Theme Color##esptheme", &g_settings.esp_use_theme);
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip(
-                "When ON: all ESP element colors (box, name, weapon,\n"
-                "healthbar) are automatically derived from the theme\n"
-                "color. Enemy gets the raw hue; teammates get a\n"
-                "blue-shifted tint. Individual color pickers below\n"
-                "are ignored while theme is active.");
-
-        if (g_settings.esp_use_theme) {
+        if (ImGui::CollapsingHeader("General Config")) {
             ImGui::Indent();
-            ImGui::ColorEdit4("Theme Color##tc", g_settings.esp_theme_color,
-                              ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+            
+            // ESP Font
+            ImGui::Text("ESP Font:");
+            render_esp_font_selector();
+            ImGui::Spacing();
 
-            // Quick presets
-            ImGui::Text("Presets:");
-            struct Preset { const char* name; float r, g, b; };
-            static constexpr Preset presets[] = {
-                {"Cyan",       0.00f, 0.85f, 1.00f},
-                {"Lime",       0.20f, 1.00f, 0.30f},
-                {"Blue",       0.235f,0.68f, 0.93f},
-                {"Magenta",    0.90f, 0.10f, 0.80f},
-                {"White",      0.95f, 0.95f, 0.95f},
-                {"Red",        1.00f, 0.15f, 0.15f},
-            };
-            for (const auto& pr : presets) {
-                if (ImGui::Button(pr.name, {65, 0})) {
-                    g_settings.esp_theme_color[0] = pr.r;
-                    g_settings.esp_theme_color[1] = pr.g;
-                    g_settings.esp_theme_color[2] = pr.b;
-                    g_settings.esp_theme_color[3] = 1.0f;
-                }
-                ImGui::SameLine();
-            }
-            ImGui::NewLine();
-            ImGui::Unindent();
-
-            // While theme is active, gray out individual color pickers with a note
-            ImGui::TextColored({0.5f, 0.5f, 0.5f, 1}, "(Individual colors below are overridden by theme)");
-            ImGui::Separator();
-        } else {
-            ImGui::Separator();
-        }
-
-        // ================================================================
-        //  CHAMS / SKELETON
-        // ================================================================
-        ImGui::Text("Chams Style:");
-        ImGui::RadioButton("Filled",   &g_settings.chams_style, 0); ImGui::SameLine();
-        ImGui::RadioButton("Wire",     &g_settings.chams_style, 1); ImGui::SameLine();
-        ImGui::RadioButton("Glow",     &g_settings.chams_style, 2); ImGui::SameLine();
-        ImGui::RadioButton("Skeleton", &g_settings.chams_style, 3);
-
-        ImGui::Checkbox("Draw Head", &g_settings.draw_head);
-        ImGui::Checkbox("Teammates", &g_settings.draw_teammates);
-        ImGui::Separator();
-
-        // ================================================================
-        // DISTANCE OPACITY
-        // ================================================================
-        ImGui::Checkbox("Distance Opacity Drop", &g_settings.esp_opacity_drop);
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Fade out ESP elements with distance.\nDoes not affect radar or spectator list.");
-        if (g_settings.esp_opacity_drop) {
-            ImGui::Indent();
-            ImGui::SliderFloat("Fade Start##opd", &g_settings.esp_opacity_drop_start,
-                               100.0f, 3000.0f, "%.0f units");
-            ImGui::SliderFloat("Fade End##opd",   &g_settings.esp_opacity_drop_end,
-                               200.0f, 5000.0f, "%.0f units");
-            ImGui::SliderFloat("Min Opacity##opd", &g_settings.esp_opacity_drop_min,
-                               0.0f, 1.0f, "%.2f");
-            // Clamp: start must be less than end
-            if (g_settings.esp_opacity_drop_start >= g_settings.esp_opacity_drop_end)
-                g_settings.esp_opacity_drop_start = g_settings.esp_opacity_drop_end - 100.0f;
-            ImGui::Unindent();
-        }
-        ImGui::Separator();
-
-        // ================================================================
-        //  BOX
-        // ================================================================
-        ImGui::Checkbox("Box", &g_settings.draw_box);
-        if (g_settings.draw_box) {
-            ImGui::Indent();
-            ImGui::RadioButton("Corners##bs", &g_settings.box_style, 0); ImGui::SameLine();
-            ImGui::RadioButton("Full##bs",    &g_settings.box_style, 1); ImGui::SameLine();
-            ImGui::RadioButton("Dashed##bs",  &g_settings.box_style, 2);
-            ImGui::SliderFloat("Thickness##bt", &g_settings.box_thickness,  0.5f, 4.0f, "%.1f");
-            ImGui::SliderFloat("Padding X",     &g_settings.box_padding_x,  0.0f, 20.0f, "%.1f");
-            ImGui::SliderFloat("Padding Y",     &g_settings.box_padding_y,  0.0f, 20.0f, "%.1f");
-            if (g_settings.box_style == 0)
-                ImGui::SliderFloat("Corner %", &g_settings.box_corner_pct, 0.1f, 0.5f, "%.2f");
-            ImGui::Unindent();
-        }
-        ImGui::Separator();
-
-        // ================================================================
-        //  HEALTH BAR
-        // ================================================================
-        ImGui::Checkbox("Health Bar", &g_settings.draw_healthbar);
-        if (g_settings.draw_healthbar) {
-            ImGui::Indent();
-
-            // Solid color toggle (grayed out when theme controls it)
-            if (g_settings.esp_use_theme) {
-                ImGui::BeginDisabled();
-                bool forced = true;
-                ImGui::Checkbox("Solid Color (theme override)##hbsc", &forced);
-                ImGui::EndDisabled();
-            } else {
-                ImGui::Checkbox("Solid Color##hbsc", &g_settings.healthbar_solid_color);
-                if (ImGui::IsItemHovered())
-                    ImGui::SetTooltip(
-                        "ON: flat single color (set below)\n"
-                        "OFF: classic green / yellow / red gradient");
-            }
-
-            if (g_settings.healthbar_solid_color && !g_settings.esp_use_theme) {
-                ImGui::ColorEdit4("Bar Color##hbcol", g_settings.healthbar_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            }
-            ImGui::Unindent();
-        }
-
-        ImGui::Checkbox("Health Text", &g_settings.draw_health_text);
-        if (g_settings.draw_health_text) {
-            ImGui::Indent();
-            if (ImGui::SliderFloat("HP Font##hpf", &g_settings.hp_font_size, 8, 24, "%.0f"))
-                g_overlay.font_rebuild_needed = true;
-            if (!g_settings.esp_use_theme) {
-                ImGui::ColorEdit4("HP Color##hpc", g_settings.hp_text_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            }
-            ImGui::Checkbox("HP Shadow", &g_settings.hp_text_shadow);
-            if (g_settings.hp_text_shadow)
-                ImGui::ColorEdit4("Shadow##hps", g_settings.hp_text_shadow_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            ImGui::Unindent();
-        }
-        ImGui::Separator();
-
-        // ================================================================
-        //  NAME
-        // ================================================================
-        ImGui::Checkbox("Name", &g_settings.draw_name);
-        if (g_settings.draw_name) {
-            ImGui::Indent();
-            ImGui::RadioButton("Top##np",   &g_settings.name_position, 0); ImGui::SameLine();
-            ImGui::RadioButton("Bot##np",   &g_settings.name_position, 1);
-            if (ImGui::SliderFloat("Name Font##nf", &g_settings.name_font_size, 8, 24, "%.0f"))
-                g_overlay.font_rebuild_needed = true;
-            ImGui::DragFloat("Offset X##no", &g_settings.name_offset_x, 0.5f, -50, 50, "%.1f");
-            ImGui::DragFloat("Offset Y##no", &g_settings.name_offset_y, 0.5f, -50, 50, "%.1f");
-            if (!g_settings.esp_use_theme) {
-                ImGui::ColorEdit4("Name##nc", g_settings.name_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            }
-            ImGui::Checkbox("Shadow##ns", &g_settings.name_shadow);
-            if (g_settings.name_shadow)
-                ImGui::ColorEdit4("Shadow##nsc", g_settings.name_shadow_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            ImGui::Unindent();
-        }
-        ImGui::Separator();
-
-        // ================================================================
-        //  WEAPON
-        // ================================================================
-        ImGui::Checkbox("Weapon", &g_settings.draw_weapon);
-        if (g_settings.draw_weapon) {
-            ImGui::Indent();
-            ImGui::Checkbox("Show Icon##wi", &g_settings.weapon_show_icon);
-            if (g_settings.weapon_show_icon && !g_weapon_icons.has_any_icons()) {
-                ImGui::SameLine();
-                ImGui::TextColored({1, 0.6f, 0.2f, 1}, "(no icons in icons/)");
-            }
-            ImGui::Checkbox("Show Text##wt", &g_settings.weapon_show_text);
-            if (ImGui::SliderFloat("Weapon Font##wf", &g_settings.weapon_font_size, 8, 20, "%.0f"))
-                g_overlay.font_rebuild_needed = true;
-            ImGui::SliderFloat("Dist. Dropoff##wdd", &g_settings.weapon_distance_dropoff, 0, 1, "%.2f");
+            // Distance Opacity
+            ImGui::Checkbox("Distance Opacity Drop", &g_settings.esp_opacity_drop);
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("0 = constant size\n1 = scales with distance\n0.3 = default");
-            if (!g_settings.esp_use_theme) {
-                ImGui::ColorEdit4("Text Color##wc", g_settings.weapon_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                ImGui::ColorEdit4("Icon Tint##wic", g_settings.weapon_icon_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            }
-            ImGui::Checkbox("Weapon Shadow##ws", &g_settings.weapon_shadow);
-            if (g_settings.weapon_shadow)
-                ImGui::ColorEdit4("Shadow##wsc", g_settings.weapon_shadow_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-        }
-        // ================================================================
-        //  SNAPLINES / TRACERS
-        // ================================================================
-        ImGui::Checkbox("Snaplines / Tracers", &g_settings.draw_snaplines);
-        if (g_settings.draw_snaplines) {
-            ImGui::Indent();
-            ImGui::Text("Origin:");
-            ImGui::RadioButton("Bottom##so", &g_settings.snapline_origin, 0); ImGui::SameLine();
-            ImGui::RadioButton("Center##so", &g_settings.snapline_origin, 1); ImGui::SameLine();
-            ImGui::RadioButton("Top##so",    &g_settings.snapline_origin, 2);
-            if (!g_settings.esp_use_theme) {
-                ImGui::ColorEdit4("Color##socol", g_settings.snapline_color,
-                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                ImGui::SetTooltip("Fade out ESP elements with distance.\nDoes not affect radar or spectator list.");
+            if (g_settings.esp_opacity_drop) {
+                ImGui::Indent();
+                ImGui::SliderFloat("Fade Start##opd", &g_settings.esp_opacity_drop_start,
+                                   100.0f, 3000.0f, "%.0f units");
+                ImGui::SliderFloat("Fade End##opd",   &g_settings.esp_opacity_drop_end,
+                                   200.0f, 5000.0f, "%.0f units");
+                ImGui::SliderFloat("Min Opacity##opd", &g_settings.esp_opacity_drop_min,
+                                   0.0f, 1.0f, "%.2f");
+                // Clamp: start must be less than end
+                if (g_settings.esp_opacity_drop_start >= g_settings.esp_opacity_drop_end)
+                    g_settings.esp_opacity_drop_start = g_settings.esp_opacity_drop_end - 100.0f;
+                ImGui::Unindent();
             }
             ImGui::Unindent();
         }
-        ImGui::Separator();
 
-        // ================================================================
-        //  BOMB ESP
-        // ================================================================
-        ImGui::Checkbox("Planted Bomb ESP in World", &g_settings.draw_bomb_esp);
-        ImGui::Separator();
+        if (ImGui::CollapsingHeader("Overlay Information")) {
+            ImGui::Indent();
 
-        // ================================================================
-        //  ESP FLAGS
-        // ================================================================
-        ImGui::Text("ESP Flags:");
-        ImGui::Checkbox("Money Flag", &g_settings.draw_money); ImGui::SameLine();
-        ImGui::Checkbox("Scoped Flag", &g_settings.draw_scoped); ImGui::SameLine();
-        ImGui::Checkbox("Flashed Flag", &g_settings.draw_flashed);
-        ImGui::Separator();
+            // Name
+            ImGui::Checkbox("Draw Name", &g_settings.draw_name);
+            if (g_settings.draw_name) {
+                ImGui::Indent();
+                ImGui::RadioButton("Top##np",   &g_settings.name_position, 0); ImGui::SameLine();
+                ImGui::RadioButton("Bot##np",   &g_settings.name_position, 1);
+                if (ImGui::SliderFloat("Name Font##nf", &g_settings.name_font_size, 8, 24, "%.0f"))
+                    g_overlay.font_rebuild_needed = true;
+                ImGui::DragFloat("Offset X##no", &g_settings.name_offset_x, 0.5f, -50, 50, "%.1f");
+                ImGui::DragFloat("Offset Y##no", &g_settings.name_offset_y, 0.5f, -50, 50, "%.1f");
+                if (!g_settings.esp_use_theme) {
+                    ImGui::ColorEdit4("Name Color##nc", g_settings.name_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                }
+                ImGui::Checkbox("Shadow##ns", &g_settings.name_shadow);
+                if (g_settings.name_shadow)
+                    ImGui::ColorEdit4("Shadow##nsc", g_settings.name_shadow_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                ImGui::Unindent();
+            }
+            ImGui::Separator();
 
-        // ================================================================
-        //  ESP FONT
-        // ================================================================
-        ImGui::Text("ESP Font:");
-        render_esp_font_selector();
-        ImGui::Separator();
+            // Weapon
+            ImGui::Checkbox("Draw Weapon", &g_settings.draw_weapon);
+            if (g_settings.draw_weapon) {
+                ImGui::Indent();
+                ImGui::Checkbox("Show Icon##wi", &g_settings.weapon_show_icon);
+                if (g_settings.weapon_show_icon && !g_weapon_icons.has_any_icons()) {
+                    ImGui::SameLine();
+                    ImGui::TextColored({1, 0.6f, 0.2f, 1}, "(no icons in icons/)");
+                }
+                ImGui::Checkbox("Show Text##wt", &g_settings.weapon_show_text);
+                if (ImGui::SliderFloat("Weapon Font##wf", &g_settings.weapon_font_size, 8, 20, "%.0f"))
+                    g_overlay.font_rebuild_needed = true;
+                ImGui::SliderFloat("Dist. Dropoff##wdd", &g_settings.weapon_distance_dropoff, 0, 1, "%.2f");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("0 = constant size\n1 = scales with distance\n0.3 = default");
+                if (!g_settings.esp_use_theme) {
+                    ImGui::ColorEdit4("Text Color##wc", g_settings.weapon_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4("Icon Tint##wic", g_settings.weapon_icon_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                }
+                ImGui::Checkbox("Weapon Shadow##ws", &g_settings.weapon_shadow);
+                if (g_settings.weapon_shadow)
+                    ImGui::ColorEdit4("Shadow##wsc", g_settings.weapon_shadow_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                ImGui::Unindent();
+            }
+            ImGui::Separator();
 
-        // ================================================================
-        //  BODY TUNING
-        // ================================================================
-        ImGui::Text("Body Tuning");
-        ImGui::SliderFloat("Body Width",  &g_settings.body_width_scale, 0.3f, 3.0f,  "%.2f");
-        ImGui::SliderFloat("Head Size",   &g_settings.head_radius,      1,    10,     "%.1f");
-        ImGui::SliderFloat("Depth Scale", &g_settings.depth_scale,      100,  1500,   "%.0f");
-        ImGui::SliderFloat("Glow Outer",  &g_settings.glow_expand_outer, 0,   15,     "%.1f");
-        ImGui::SliderFloat("Glow Inner",  &g_settings.glow_expand_inner, 0,   10,     "%.1f");
-        if (ImGui::Button("Reset Body")) {
-            g_settings.body_width_scale  = 1.0f;
-            g_settings.head_radius       = 6.0f;
-            g_settings.depth_scale       = 500.0f;
-            g_settings.glow_expand_outer = 6.0f;
-            g_settings.glow_expand_inner = 3.0f;
+            // Health
+            ImGui::Checkbox("Draw Health Bar", &g_settings.draw_healthbar);
+            if (g_settings.draw_healthbar) {
+                ImGui::Indent();
+                if (g_settings.esp_use_theme) {
+                    ImGui::BeginDisabled();
+                    bool forced = true;
+                    ImGui::Checkbox("Solid Color (theme override)##hbsc", &forced);
+                    ImGui::EndDisabled();
+                } else {
+                    ImGui::Checkbox("Solid Color##hbsc", &g_settings.healthbar_solid_color);
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip(
+                            "ON: flat single color (set below)\n"
+                            "OFF: classic green / yellow / red gradient");
+                }
+                if (g_settings.healthbar_solid_color && !g_settings.esp_use_theme) {
+                    ImGui::ColorEdit4("Bar Color##hbcol", g_settings.healthbar_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                }
+                ImGui::Unindent();
+            }
+
+            ImGui::Checkbox("Draw Health Text", &g_settings.draw_health_text);
+            if (g_settings.draw_health_text) {
+                ImGui::Indent();
+                if (ImGui::SliderFloat("HP Font##hpf", &g_settings.hp_font_size, 8, 24, "%.0f"))
+                    g_overlay.font_rebuild_needed = true;
+                if (!g_settings.esp_use_theme) {
+                    ImGui::ColorEdit4("HP Color##hpc", g_settings.hp_text_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                }
+                ImGui::Checkbox("HP Shadow", &g_settings.hp_text_shadow);
+                if (g_settings.hp_text_shadow)
+                    ImGui::ColorEdit4("Shadow##hps", g_settings.hp_text_shadow_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                ImGui::Unindent();
+            }
+            ImGui::Separator();
+
+            // Flags & Bomb ESP
+            ImGui::Text("ESP Flags:");
+            ImGui::Checkbox("Money", &g_settings.draw_money); ImGui::SameLine();
+            ImGui::Checkbox("Scoped", &g_settings.draw_scoped); ImGui::SameLine();
+            ImGui::Checkbox("Flashed", &g_settings.draw_flashed);
+            
+            ImGui::Spacing();
+            ImGui::Checkbox("Planted Bomb ESP in World", &g_settings.draw_bomb_esp);
+
+            ImGui::Unindent();
         }
-        ImGui::Separator();
 
-        // ================================================================
-        //  ESP COLORS  (only shown when theme is OFF)
-        // ================================================================
-        if (!g_settings.esp_use_theme) {
-            ImGui::Text("ESP Colors");
-            ImGui::Columns(2, nullptr, false);
-            ImGui::Text("Enemy");
-            ImGui::ColorEdit4("Fill##ef",    g_settings.enemy_fill,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
-            ImGui::ColorEdit4("Outline##eo", g_settings.enemy_outline, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
-            ImGui::ColorEdit4("Glow##eg",    g_settings.enemy_glow,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
-            ImGui::NextColumn();
-            ImGui::Text("Team");
-            ImGui::ColorEdit4("Fill##tf",    g_settings.team_fill,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
-            ImGui::ColorEdit4("Outline##to", g_settings.team_outline, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
-            ImGui::ColorEdit4("Glow##tg",    g_settings.team_glow,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
-            ImGui::Columns(1);
+        if (ImGui::CollapsingHeader("Models, Box & Chams")) {
+            ImGui::Indent();
+
+            // Box
+            ImGui::Checkbox("Draw Box", &g_settings.draw_box);
+            if (g_settings.draw_box) {
+                ImGui::Indent();
+                ImGui::RadioButton("Corners##bs", &g_settings.box_style, 0); ImGui::SameLine();
+                ImGui::RadioButton("Full##bs",    &g_settings.box_style, 1); ImGui::SameLine();
+                ImGui::RadioButton("Dashed##bs",  &g_settings.box_style, 2);
+                ImGui::SliderFloat("Thickness##bt", &g_settings.box_thickness,  0.5f, 4.0f, "%.1f");
+                ImGui::SliderFloat("Padding X",     &g_settings.box_padding_x,  0.0f, 20.0f, "%.1f");
+                ImGui::SliderFloat("Padding Y",     &g_settings.box_padding_y,  0.0f, 20.0f, "%.1f");
+                if (g_settings.box_style == 0)
+                    ImGui::SliderFloat("Corner %", &g_settings.box_corner_pct, 0.1f, 0.5f, "%.2f");
+                ImGui::Unindent();
+            }
+            ImGui::Separator();
+
+            // Chams Style
+            ImGui::Text("Chams Style:");
+            ImGui::RadioButton("Filled",   &g_settings.chams_style, 0); ImGui::SameLine();
+            ImGui::RadioButton("Wire",     &g_settings.chams_style, 1); ImGui::SameLine();
+            ImGui::RadioButton("Glow",     &g_settings.chams_style, 2); ImGui::SameLine();
+            ImGui::RadioButton("Skeleton", &g_settings.chams_style, 3);
+            ImGui::Checkbox("Draw Head", &g_settings.draw_head);
+            ImGui::Separator();
+
+            // Snaplines / Tracers
+            ImGui::Checkbox("Snaplines / Tracers", &g_settings.draw_snaplines);
+            if (g_settings.draw_snaplines) {
+                ImGui::Indent();
+                ImGui::Text("Origin:");
+                ImGui::RadioButton("Bottom##so", &g_settings.snapline_origin, 0); ImGui::SameLine();
+                ImGui::RadioButton("Center##so", &g_settings.snapline_origin, 1); ImGui::SameLine();
+                ImGui::RadioButton("Top##so",    &g_settings.snapline_origin, 2);
+                if (!g_settings.esp_use_theme) {
+                    ImGui::ColorEdit4("Color##socol", g_settings.snapline_color,
+                                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                }
+                ImGui::Unindent();
+            }
+            ImGui::Separator();
+
+            // Body Tuning
+            ImGui::Text("Body Tuning");
+            ImGui::SliderFloat("Body Width",  &g_settings.body_width_scale, 0.3f, 3.0f,  "%.2f");
+            ImGui::SliderFloat("Head Size",   &g_settings.head_radius,      1,    10,     "%.1f");
+            ImGui::SliderFloat("Depth Scale", &g_settings.depth_scale,      100,  1500,   "%.0f");
+            ImGui::SliderFloat("Glow Outer",  &g_settings.glow_expand_outer, 0,   15,     "%.1f");
+            ImGui::SliderFloat("Glow Inner",  &g_settings.glow_expand_inner, 0,   10,     "%.1f");
+            if (ImGui::Button("Reset Body")) {
+                g_settings.body_width_scale  = 1.0f;
+                g_settings.head_radius       = 6.0f;
+                g_settings.depth_scale       = 500.0f;
+                g_settings.glow_expand_outer = 6.0f;
+                g_settings.glow_expand_inner = 3.0f;
+            }
+
+            ImGui::Unindent();
+        }
+
+        if (ImGui::CollapsingHeader("Theme & Colors")) {
+            ImGui::Indent();
+
+            // Theme Color
+            ImVec4 theme_accent = {g_settings.esp_theme_color[0], g_settings.esp_theme_color[1],
+                                   g_settings.esp_theme_color[2], g_settings.esp_theme_color[3]};
+            ImGui::TextColored(theme_accent, "ESP Theme Color");
+            ImGui::Checkbox("Use Theme Color##esptheme", &g_settings.esp_use_theme);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip(
+                    "When ON: all ESP element colors (box, name, weapon,\n"
+                    "healthbar) are automatically derived from the theme\n"
+                    "color. Enemy gets the raw hue; teammates get a\n"
+                    "blue-shifted tint. Individual color pickers below\n"
+                    "are ignored while theme is active.");
+
+            if (g_settings.esp_use_theme) {
+                ImGui::Indent();
+                ImGui::ColorEdit4("Theme Color##tc", g_settings.esp_theme_color,
+                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+
+                // Quick presets
+                ImGui::Text("Presets:");
+                struct Preset { const char* name; float r, g, b; };
+                static constexpr Preset presets[] = {
+                    {"Cyan",       0.00f, 0.85f, 1.00f},
+                    {"Lime",       0.20f, 1.00f, 0.30f},
+                    {"Blue",       0.235f,0.68f, 0.93f},
+                    {"Magenta",    0.90f, 0.10f, 0.80f},
+                    {"White",      0.95f, 0.95f, 0.95f},
+                    {"Red",        1.00f, 0.15f, 0.15f},
+                };
+                for (const auto& pr : presets) {
+                    if (ImGui::Button(pr.name, {65, 0})) {
+                        g_settings.esp_theme_color[0] = pr.r;
+                        g_settings.esp_theme_color[1] = pr.g;
+                        g_settings.esp_theme_color[2] = pr.b;
+                        g_settings.esp_theme_color[3] = 1.0f;
+                    }
+                    ImGui::SameLine();
+                }
+                ImGui::NewLine();
+                ImGui::Unindent();
+
+                ImGui::TextColored({0.5f, 0.5f, 0.5f, 1}, "(Individual colors below are overridden by theme)");
+            }
+
+            // Custom Colors (only shown when theme is OFF)
+            if (!g_settings.esp_use_theme) {
+                ImGui::Text("Custom Colors");
+                ImGui::Columns(2, nullptr, false);
+                ImGui::Text("Enemy");
+                ImGui::ColorEdit4("Fill##ef",    g_settings.enemy_fill,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+                ImGui::ColorEdit4("Outline##eo", g_settings.enemy_outline, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+                ImGui::ColorEdit4("Glow##eg",    g_settings.enemy_glow,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+                ImGui::NextColumn();
+                ImGui::Text("Team");
+                ImGui::ColorEdit4("Fill##tf",    g_settings.team_fill,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+                ImGui::ColorEdit4("Outline##to", g_settings.team_outline, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+                ImGui::ColorEdit4("Glow##tg",    g_settings.team_glow,    ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+                ImGui::Columns(1);
+            }
+
+            ImGui::Unindent();
         }
     }
 
