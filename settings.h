@@ -112,6 +112,7 @@ struct MenuSettings {
 
     // Bomb Timer
     bool bomb_timer_enabled = true;
+    bool draw_bomb_esp = true;
 
     // Vote Teller
     bool vote_teller_enabled = true;

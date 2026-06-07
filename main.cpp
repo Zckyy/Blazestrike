@@ -320,7 +320,7 @@ int main() {
             state.map_scale, g_overlay.width, g_overlay.height);
 
         g_spectators.draw(g_overlay.width);
-        g_bomb_timer.draw(g_overlay.width, g_overlay.height);
+        g_bomb_timer.draw(g_overlay.width, g_overlay.height, state.view_matrix);
         g_vote_teller.draw(g_overlay.width, g_overlay.height);
         g_enemy_info_box.draw(state, g_overlay.width, g_overlay.height);
 

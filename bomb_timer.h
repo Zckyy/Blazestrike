@@ -29,6 +29,7 @@ private:
     // Timer to keep "BOMB DEFUSED!" on screen for a few seconds
     std::chrono::steady_clock::time_point defused_show_start;
     bool showing_defused = false;
+    Vec3 bomb_pos{0.0f, 0.0f, 0.0f};
 
 public:
     void update() {
@@ -78,6 +79,14 @@ public:
         c4_blow = g_memory->read<float>(planted_c4 + g_offsets.C_PlantedC4.m_flC4Blow);
         being_defused = g_memory->read<bool>(planted_c4 + g_offsets.C_PlantedC4.m_bBeingDefused);
 
+        // Read bomb position from game scene node
+        uintptr_t scene_node = g_memory->read<uintptr_t>(planted_c4 + g_offsets.C_BaseEntity.m_pGameSceneNode);
+        if (scene_node) {
+            bomb_pos = g_memory->read<Vec3>(scene_node + g_offsets.CGameSceneNode.m_vecAbsOrigin);
+        } else {
+            bomb_pos = {0.0f, 0.0f, 0.0f};
+        }
+
         time_left = c4_blow - current_time;
         defuse_left = defuse_countdown - current_time;
 
@@ -111,8 +120,48 @@ public:
         showing_defused = false;
     }
 
-    void draw(int screen_w, int screen_h) {
-        if (!g_settings.bomb_timer_enabled || !g_settings.master_switch) return;
+    void draw(int screen_w, int screen_h, const Matrix4x4& view_matrix) {
+        if (!g_settings.master_switch) return;
+
+        ImFont* font = g_overlay.menu_font;
+
+        // 1. World ESP drawing
+        if (g_settings.draw_bomb_esp && is_bomb_planted && bomb_pos.length_sqr() > 0.01f) {
+            ImVec2 screen_pos;
+            if (w2s(bomb_pos, view_matrix, screen_w, screen_h, screen_pos)) {
+                char world_text[128];
+                if (being_defused) {
+                    snprintf(world_text, sizeof(world_text), "BOMB %s\n%.2fs\nBEING DEFUSED", bomb_site.c_str(), time_left);
+                } else {
+                    snprintf(world_text, sizeof(world_text), "BOMB %s\n%.2fs", bomb_site.c_str(), time_left);
+                }
+
+                ImFont* draw_font = font ? font : ImGui::GetFont();
+                float world_fs = 13.0f;
+                ImVec2 text_size = draw_font->CalcTextSizeA(world_fs, FLT_MAX, 0.0f, world_text);
+
+                float x = screen_pos.x - text_size.x * 0.5f;
+                float y = screen_pos.y - text_size.y * 0.5f;
+
+                ImDrawList* d = ImGui::GetBackgroundDrawList();
+                ImU32 bg_col = IM_COL32(0, 0, 0, 160);
+                ImU32 text_col = being_defused ? IM_COL32(255, 80, 80, 255) : IM_COL32(255, 255, 50, 255);
+                ImU32 border_col = being_defused ? IM_COL32(255, 50, 50, 255) : IM_COL32(255, 255, 255, 180);
+
+                float pad = 6.0f;
+                d->AddRectFilled({x - pad, y - pad}, {x + text_size.x + pad, y + text_size.y + pad}, bg_col, 4.0f);
+                d->AddRect({x - pad, y - pad}, {x + text_size.x + pad, y + text_size.y + pad}, border_col, 4.0f, 0, 1.0f);
+
+                ImU32 shadow_col = IM_COL32(0, 0, 0, 240);
+                d->AddText(draw_font, world_fs, {x - 1, y}, shadow_col, world_text);
+                d->AddText(draw_font, world_fs, {x + 1, y}, shadow_col, world_text);
+                d->AddText(draw_font, world_fs, {x, y - 1}, shadow_col, world_text);
+                d->AddText(draw_font, world_fs, {x, y + 1}, shadow_col, world_text);
+                d->AddText(draw_font, world_fs, {x, y}, text_col, world_text);
+            }
+        }
+
+        if (!g_settings.bomb_timer_enabled) return;
 
         // Handle temporary "BOMB DEFUSED!" message timing
         if (showing_defused) {
@@ -152,7 +201,7 @@ public:
             text_color = {1.0f, 1.0f, 1.0f, 1.0f}; // White
         }
 
-        ImFont* font = g_overlay.menu_font;
+        font = g_overlay.menu_font;
         if (font) ImGui::PushFont(font);
 
         ImGui::Begin("##bomb_timer_window", nullptr, flags);
@@ -190,7 +239,7 @@ public:
             ImVec2 text_size = draw_font->CalcTextSizeA(warning_fs, FLT_MAX, 0.0f, warning_text);
 
             float wx = ((float)screen_w - text_size.x) * 0.5f;
-            float wy = 60.0f; // Top center
+            float wy = (float)screen_h * 0.25f; // Lowered towards the center
 
             ImDrawList* d = ImGui::GetBackgroundDrawList();
             ImU32 col = ImGui::ColorConvertFloat4ToU32(warning_color);
@@ -203,6 +252,17 @@ public:
             d->AddText(draw_font, warning_fs, {wx, wy + 2}, shadow_col, warning_text);
             
             d->AddText(draw_font, warning_fs, {wx, wy}, col, warning_text);
+        }
+
+        // Draw a red flash/border around the screen if the bomb is being defused and there's enough time to defuse
+        if (is_bomb_planted && being_defused && defuse_left < time_left) {
+            float pulse = (std::sin)(current_time * 6.0f) * 0.5f + 0.5f; // Pulse between 0.0 and 1.0
+            float alpha = 0.2f + 0.5f * pulse; // Alpha between 0.2 and 0.7
+            float thickness = 12.0f;
+            float half = thickness * 0.5f;
+            ImU32 flash_col = IM_COL32(255, 0, 0, (int)(alpha * 255.0f));
+            ImDrawList* d = ImGui::GetBackgroundDrawList();
+            d->AddRect({half, half}, {(float)screen_w - half, (float)screen_h - half}, flash_col, 0.0f, 0, thickness);
         }
 
         if (font) ImGui::PopFont();
@@ -218,6 +278,7 @@ private:
         defuse_left = 0.0f;
         being_defused = false;
         bomb_site.clear();
+        bomb_pos = {0.0f, 0.0f, 0.0f};
     }
 };
 
