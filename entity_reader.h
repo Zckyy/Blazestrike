@@ -390,6 +390,12 @@ private:
 
         read_weapon(pawn, state.entity_list, player.weapon, sizeof(player.weapon), player.weapon_def_index);
 
+        player.is_scoped = g_memory->read<bool>(pawn + g_offsets.C_CSPlayerPawn.m_bIsScoped);
+        float flash_alpha = g_memory->read<float>(pawn + g_offsets.C_CSPlayerPawnBase.m_flFlashOverlayAlpha);
+        player.is_flashed = (flash_alpha > 0.0f);
+        uintptr_t money_services = g_memory->read<uintptr_t>(controller + g_offsets.CCSPlayerController.m_pInGameMoneyServices);
+        player.money = money_services ? g_memory->read<int>(money_services + g_offsets.CCSPlayerController_InGameMoneyServices.m_iAccount) : 0;
+
         for (int b = 0; b < MAX_BONE; b++)
             player.visible[b] = w2s_depth(
                 bone_buf[b].pos, state.view_matrix,

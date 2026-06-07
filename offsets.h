@@ -25,7 +25,11 @@ struct Offsets {
         uint32_t m_hPawn;
         uint32_t m_sSanitizedPlayerName;
         uint32_t m_hObserverPawn;
+        uint32_t m_pInGameMoneyServices;
     } CCSPlayerController;
+    struct {
+        uint32_t m_iAccount;
+    } CCSPlayerController_InGameMoneyServices;
     struct {
         uint32_t m_pObserverServices;
     } C_BasePlayerPawn;
@@ -36,15 +40,16 @@ struct Offsets {
         uint32_t m_bIsScoped, m_entitySpottedState, m_pAimPunchServices, m_iShotsFired;
     } C_CSPlayerPawn;
     struct {
+        uint32_t m_flFlashOverlayAlpha;
+        uint32_t m_pWeaponServices;
+    } C_CSPlayerPawnBase;
+    struct {
         uint32_t m_unpredictableBaseTick;
         uint32_t aimPunchCache;
     } CCSPlayer_AimPunchServices;
     struct {
         uint32_t m_vecViewOffset;
     } C_BaseModelEntity;
-    struct {
-        uint32_t m_pWeaponServices;
-    } C_CSPlayerPawnBase;
     struct {
         uint32_t m_hActiveWeapon;
     } CPlayer_WeaponServices;
@@ -143,6 +148,10 @@ private:
                 cs["CCSPlayerController"]["fields"]["m_sSanitizedPlayerName"];
             CCSPlayerController.m_hPawn =
                 cs["CBasePlayerController"]["fields"]["m_hPawn"];
+            CCSPlayerController.m_pInGameMoneyServices =
+                cs["CCSPlayerController"]["fields"]["m_pInGameMoneyServices"];
+            CCSPlayerController_InGameMoneyServices.m_iAccount =
+                cs["CCSPlayerController_InGameMoneyServices"]["fields"]["m_iAccount"];
 
             C_BasePlayerPawn.m_pObserverServices =
                 cs["C_BasePlayerPawn"]["fields"]["m_pObserverServices"];
@@ -150,6 +159,7 @@ private:
                 cs["CPlayer_ObserverServices"]["fields"]["m_hObserverTarget"];
 
             C_CSPlayerPawn.m_bIsScoped = cs["C_CSPlayerPawn"]["fields"]["m_bIsScoped"];
+            C_CSPlayerPawnBase.m_flFlashOverlayAlpha = cs["C_CSPlayerPawnBase"]["fields"]["m_flFlashOverlayAlpha"];
             C_BaseModelEntity.m_vecViewOffset =
                 cs["C_BaseModelEntity"]["fields"]["m_vecViewOffset"];
 

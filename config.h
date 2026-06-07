@@ -31,6 +31,9 @@ public:
         write(f, "esp_opacity_drop_start", g_settings.esp_opacity_drop_start);
         write(f, "esp_opacity_drop_end",   g_settings.esp_opacity_drop_end);
         write(f, "esp_opacity_drop_min",   g_settings.esp_opacity_drop_min);
+        write(f, "draw_money",             g_settings.draw_money);
+        write(f, "draw_scoped",            g_settings.draw_scoped);
+        write(f, "draw_flashed",           g_settings.draw_flashed);
 
         f << "\n[Font]\n";
         write(f, "esp_font_index", g_settings.esp_font_index);
@@ -67,6 +70,8 @@ public:
         write(f, "spec_x", g_settings.spec_x);
         write(f, "spec_y", g_settings.spec_y);
         write(f, "bomb_timer_enabled", g_settings.bomb_timer_enabled);
+        write(f, "vote_teller_enabled", g_settings.vote_teller_enabled);
+        write(f, "enemy_info_box_enabled", g_settings.enemy_info_box_enabled);
 
         f << "\n[Radar]\n";
         write(f, "draw_radar", g_settings.draw_radar);
@@ -213,6 +218,9 @@ public:
         read(kv, "esp_opacity_drop_start", g_settings.esp_opacity_drop_start);
         read(kv, "esp_opacity_drop_end",   g_settings.esp_opacity_drop_end);
         read(kv, "esp_opacity_drop_min",   g_settings.esp_opacity_drop_min);
+        read(kv, "draw_money",             g_settings.draw_money);
+        read(kv, "draw_scoped",            g_settings.draw_scoped);
+        read(kv, "draw_flashed",           g_settings.draw_flashed);
         read(kv,     "healthbar_solid_color", g_settings.healthbar_solid_color);
         read_arr(kv, "healthbar_color",     g_settings.healthbar_color, 4);
         read(kv, "draw_box", g_settings.draw_box);
@@ -251,6 +259,8 @@ public:
         read(kv, "spec_x", g_settings.spec_x);
         read(kv, "spec_y", g_settings.spec_y);
         read(kv, "bomb_timer_enabled", g_settings.bomb_timer_enabled);
+        read(kv, "vote_teller_enabled", g_settings.vote_teller_enabled);
+        read(kv, "enemy_info_box_enabled", g_settings.enemy_info_box_enabled);
 
         read(kv, "draw_radar", g_settings.draw_radar);
         read(kv, "radar_circle", g_settings.radar_circle);

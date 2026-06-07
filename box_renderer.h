@@ -82,6 +82,41 @@ public:
 
         if (g_settings.draw_weapon && (p.weapon[0] || p.weapon_def_index) && font)
             draw_weapon(d, x0, y0, x1, y1, p, font, avg_depth, opacity);
+
+        // Draw flags (Money, Scoped, Flashed) on the right side of the box
+        if (font) {
+            float flag_fs = g_settings.name_font_size * 0.9f;
+            float right_x = floorf(x1 + 4.0f);
+            float current_y = floorf(y0);
+            float line_height = flag_fs + 2.0f;
+
+            ImU32 shadow_col = apply_opacity(IM_COL32(0, 0, 0, 220), opacity);
+
+            auto draw_flag_text = [&](const char* text, ImU32 color) {
+                if (g_settings.name_shadow) {
+                    d->AddText(font, flag_fs, {right_x - 1, current_y}, shadow_col, text);
+                    d->AddText(font, flag_fs, {right_x + 1, current_y}, shadow_col, text);
+                    d->AddText(font, flag_fs, {right_x, current_y - 1}, shadow_col, text);
+                    d->AddText(font, flag_fs, {right_x, current_y + 1}, shadow_col, text);
+                }
+                d->AddText(font, flag_fs, {right_x, current_y}, color, text);
+                current_y += line_height;
+            };
+
+            if (g_settings.draw_money && p.money > 0) {
+                char money_str[32];
+                snprintf(money_str, sizeof(money_str), "$%d", p.money);
+                draw_flag_text(money_str, apply_opacity(IM_COL32(120, 255, 120, 255), opacity));
+            }
+
+            if (g_settings.draw_scoped && p.is_scoped) {
+                draw_flag_text("SCOPED", apply_opacity(IM_COL32(100, 180, 255, 255), opacity));
+            }
+
+            if (g_settings.draw_flashed && p.is_flashed) {
+                draw_flag_text("FLASHED", apply_opacity(IM_COL32(255, 180, 100, 255), opacity));
+            }
+        }
     }
 
 private:

@@ -23,6 +23,8 @@
 #include "grenades.h"
 #include "input/input.h"
 #include "bomb_timer.h"
+#include "vote_teller.h"
+#include "enemy_info_box.h"
 
 static const char* CONFIG_PATH = "config.ini";
 static volatile bool g_running = true;
@@ -224,6 +226,9 @@ int main() {
             g_overlay.width, g_overlay.height);
 
         g_bomb_timer.update();
+        if (state.entity_list) {
+            g_vote_teller.update(state.entity_list);
+        }
 
         if (g_settings.aimbot_enabled || g_settings.triggerbot_enabled)
         {
@@ -316,6 +321,8 @@ int main() {
 
         g_spectators.draw(g_overlay.width);
         g_bomb_timer.draw(g_overlay.width, g_overlay.height);
+        g_vote_teller.draw(g_overlay.width, g_overlay.height);
+        g_enemy_info_box.draw(state, g_overlay.width, g_overlay.height);
 
         ImDrawList* fg = ImGui::GetForegroundDrawList();
         Crosshair::Config xhair_cfg = {

@@ -121,6 +121,10 @@ struct PlayerVisuals {
     Vec3 neck_world{};      // bone 5
     Vec3 chest_world{};     // bone 4
     Vec3 pelvis_world{};    // bone 0
+
+    bool is_scoped = false;
+    bool is_flashed = false;
+    int money = 0;
 };
 
 struct RadarPlayer {

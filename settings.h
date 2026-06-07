@@ -12,6 +12,9 @@ struct MenuSettings {
     bool draw_health_text = true;
     bool draw_name = true;
     bool draw_weapon = true;
+    bool draw_money = true;
+    bool draw_scoped = true;
+    bool draw_flashed = true;
     bool draw_teammates = false;
     bool draw_head = true;
     bool draw_spectators = true;
@@ -106,6 +109,12 @@ struct MenuSettings {
 
     // Bomb Timer
     bool bomb_timer_enabled = true;
+
+    // Vote Teller
+    bool vote_teller_enabled = true;
+
+    // Enemy Info Box
+    bool enemy_info_box_enabled = true;
 
     // Grenade Helper
     bool  grenade_helper_enabled    = false;

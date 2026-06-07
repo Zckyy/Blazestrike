@@ -318,8 +318,16 @@ private:
             if (g_settings.weapon_shadow)
                 ImGui::ColorEdit4("Shadow##wsc", g_settings.weapon_shadow_color,
                                   ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            ImGui::Unindent();
         }
+        ImGui::Separator();
+
+        // ================================================================
+        //  ESP FLAGS
+        // ================================================================
+        ImGui::Text("ESP Flags:");
+        ImGui::Checkbox("Money Flag", &g_settings.draw_money); ImGui::SameLine();
+        ImGui::Checkbox("Scoped Flag", &g_settings.draw_scoped); ImGui::SameLine();
+        ImGui::Checkbox("Flashed Flag", &g_settings.draw_flashed);
         ImGui::Separator();
 
         // ================================================================
@@ -454,8 +462,10 @@ private:
     void render_tab_misc() {
         ImGui::Spacing();
 
-        ImGui::Text("Bomb Timer");
+        ImGui::Text("Overlay Boxes");
         ImGui::Checkbox("Show Bomb Timer", &g_settings.bomb_timer_enabled);
+        ImGui::Checkbox("Show Vote Teller", &g_settings.vote_teller_enabled);
+        ImGui::Checkbox("Enemy Player Info Box", &g_settings.enemy_info_box_enabled);
 
         ImGui::Separator();
 
