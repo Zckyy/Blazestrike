@@ -173,6 +173,12 @@ public:
         write(f, "triggerbot_delay", g_settings.triggerbot_delay);
         write(f, "triggerbot_head_only", g_settings.triggerbot_head_only);
 
+        f << "\n[RCS]\n";
+        write(f, "rcs_enabled", g_settings.rcs_enabled);
+        write(f, "rcs_bullet", g_settings.rcs_bullet);
+        write(f, "rcs_scale_x", g_settings.rcs_scale_x);
+        write(f, "rcs_scale_y", g_settings.rcs_scale_y);
+
         f.close();
         return true;
     }
@@ -328,6 +334,11 @@ public:
         read(kv, "key_triggerbot", g_settings.key_triggerbot);
         read(kv, "triggerbot_delay", g_settings.triggerbot_delay);
         read(kv, "triggerbot_head_only", g_settings.triggerbot_head_only);
+
+        read(kv, "rcs_enabled", g_settings.rcs_enabled);
+        read(kv, "rcs_bullet", g_settings.rcs_bullet);
+        read(kv, "rcs_scale_x", g_settings.rcs_scale_x);
+        read(kv, "rcs_scale_y", g_settings.rcs_scale_y);
 
         return true;
     }

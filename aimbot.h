@@ -422,6 +422,93 @@ static void aimbot_tick() {
     }
 }
 
+struct C_UtlVector_Punch {
+    uint32_t Count;
+    char pad[4];
+    uint64_t Data;
+};
+
+namespace RCS
+{
+    inline Vec2 GetLatestPunch(uintptr_t local_pawn) {
+        uint64_t aimPunchServicesPtr = 0;
+        if (!g_memory->read_raw(local_pawn + g_offsets.C_CSPlayerPawn.m_pAimPunchServices, &aimPunchServicesPtr, sizeof(aimPunchServicesPtr)))
+            return { 0, 0 };
+
+        if (!aimPunchServicesPtr) return { 0, 0 };
+
+        uint64_t cacheAddr = aimPunchServicesPtr + g_offsets.CCSPlayer_AimPunchServices.aimPunchCache;
+
+        C_UtlVector_Punch cache{};
+        if (g_memory->read_raw(cacheAddr, &cache, sizeof(cache))) {
+            if (cache.Count > 0 && cache.Count < 1000 && cache.Data != 0) {
+                Vec2 punch = { 0, 0 };
+                uint64_t lastElementAddr = cache.Data + (static_cast<uint64_t>(cache.Count) - 1) * 12;
+                if (g_memory->read_raw(lastElementAddr, &punch, sizeof(punch))) {
+                    return punch;
+                }
+            }
+        }
+        return { 0, 0 };
+    }
+
+    inline float GetSensitivity() {
+        uintptr_t client_base = g_memory->get_client_base();
+        if (!client_base) return 1.25f;
+
+        uint64_t sensPtr = 0;
+        if (!g_memory->read_raw(client_base + g_offsets.client.dwSensitivity, &sensPtr, sizeof(sensPtr)))
+            return 1.25f;
+
+        if (!sensPtr) return 1.25f;
+
+        float sensitivity = 1.25f;
+        if (!g_memory->read_raw(sensPtr + g_offsets.client.dwSensitivity_sensitivity, &sensitivity, sizeof(sensitivity)))
+            return 1.25f;
+
+        return sensitivity;
+    }
+
+    inline void RecoilControl(uintptr_t local_pawn) {
+        static Vec2 OldPunch = { 0, 0 };
+
+        if (!g_settings.rcs_enabled) {
+            OldPunch = { 0, 0 };
+            return;
+        }
+
+        int shots_fired = 0;
+        if (!g_memory->read_raw(local_pawn + g_offsets.C_CSPlayerPawn.m_iShotsFired, &shots_fired, sizeof(shots_fired))) {
+            OldPunch = { 0, 0 };
+            return;
+        }
+
+        if (shots_fired > g_settings.rcs_bullet) {
+            Vec2 currentPunch = GetLatestPunch(local_pawn);
+
+            if (currentPunch.x == 0 && currentPunch.y == 0) return;
+
+            Vec2 delta = (currentPunch - OldPunch) * 2.0f;
+
+            float sensitivity = GetSensitivity();
+            if (sensitivity <= 0.0f) sensitivity = 1.25f;
+
+            int MouseX = (int)((delta.y / (sensitivity * 0.022f)) * g_settings.rcs_scale_x);
+            int MouseY = (int)((delta.x / (sensitivity * 0.022f)) * g_settings.rcs_scale_y);
+
+            if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+                if (MouseX != 0 || MouseY != 0) {
+                    g_input.inject_mouse(MouseX, -MouseY, Input::move);
+                }
+            }
+
+            OldPunch = currentPunch;
+        } else {
+            OldPunch = { 0, 0 };
+        }
+    }
+}
+
 static void aimbot_thread_func()
 {
     printf("[+] Aimbot thread started (tid: %lu)\n", GetCurrentThreadId());
@@ -435,6 +522,11 @@ static void aimbot_thread_func()
         if (g_overlay.is_game_window()) {
             triggerbot_tick();
             aimbot_tick();
+
+            AimbotFrame frame = g_aimbot_data.snapshot();
+            if (frame.local_pawn) {
+                RCS::RecoilControl(frame.local_pawn);
+            }
         }
 
         limit_frame(tick_start, tick_fps);

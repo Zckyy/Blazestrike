@@ -417,6 +417,18 @@ private:
 
         ImGui::Separator();
         ImGui::Spacing();
+        ImGui::Checkbox("Enable Recoil Control", &g_settings.rcs_enabled);
+
+        if (g_settings.rcs_enabled) {
+            ImGui::Indent();
+            ImGui::SliderInt("Start Bullet", &g_settings.rcs_bullet, 1, 30);
+            ImGui::SliderFloat("RCS Scale X", &g_settings.rcs_scale_x, 0.0f, 2.0f, "%.2f");
+            ImGui::SliderFloat("RCS Scale Y", &g_settings.rcs_scale_y, 0.0f, 2.0f, "%.2f");
+            ImGui::Unindent();
+        }
+
+        ImGui::Separator();
+        ImGui::Spacing();
 
         ImGui::Checkbox("Enable triggerbot", &g_settings.triggerbot_enabled);
 

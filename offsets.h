@@ -9,7 +9,7 @@
 
 struct Offsets {
     struct {
-        uint32_t dwEntityList, dwViewMatrix, dwViewRender, dwLocalPlayerPawn, dwLocalPlayerController, dwGlobalVars;
+        uint32_t dwEntityList, dwViewMatrix, dwViewRender, dwLocalPlayerPawn, dwLocalPlayerController, dwGlobalVars, dwSensitivity, dwSensitivity_sensitivity;
     } client;
     struct {
         uint32_t m_iTeamNum, m_pGameSceneNode, m_iHealth;
@@ -33,8 +33,12 @@ struct Offsets {
         uint32_t m_hObserverTarget;
     } CPlayer_ObserverServices;
     struct {
-        uint32_t m_bIsScoped, m_entitySpottedState;
+        uint32_t m_bIsScoped, m_entitySpottedState, m_pAimPunchServices, m_iShotsFired;
     } C_CSPlayerPawn;
+    struct {
+        uint32_t m_unpredictableBaseTick;
+        uint32_t aimPunchCache;
+    } CCSPlayer_AimPunchServices;
     struct {
         uint32_t m_vecViewOffset;
     } C_BaseModelEntity;
@@ -119,6 +123,8 @@ private:
             client.dwLocalPlayerPawn = cl["dwLocalPlayerPawn"];
             client.dwLocalPlayerController = cl["dwLocalPlayerController"];
             client.dwGlobalVars = cl["dwGlobalVars"];
+            client.dwSensitivity = cl["dwSensitivity"];
+            client.dwSensitivity_sensitivity = cl["dwSensitivity_sensitivity"];
 
             auto& cs = cj["client.dll"]["classes"];
             C_BaseEntity.m_iTeamNum = cs["C_BaseEntity"]["fields"]["m_iTeamNum"];
@@ -152,6 +158,10 @@ private:
             C_EconItemView.m_iItemDefinitionIndex = cs["C_EconItemView"]["fields"]["m_iItemDefinitionIndex"];
 
             C_CSPlayerPawn.m_entitySpottedState = cs["C_CSPlayerPawn"]["fields"]["m_entitySpottedState"];
+            C_CSPlayerPawn.m_pAimPunchServices = cs["C_CSPlayerPawn"]["fields"]["m_pAimPunchServices"];
+            C_CSPlayerPawn.m_iShotsFired = cs["C_CSPlayerPawn"]["fields"]["m_iShotsFired"];
+            CCSPlayer_AimPunchServices.m_unpredictableBaseTick = cs["CCSPlayer_AimPunchServices"]["fields"]["m_unpredictableBaseTick"];
+            CCSPlayer_AimPunchServices.aimPunchCache = CCSPlayer_AimPunchServices.m_unpredictableBaseTick - 0x18;
             EntitySpottedState_t.m_bSpotted = cs["EntitySpottedState_t"]["fields"]["m_bSpotted"];
 
             return true;

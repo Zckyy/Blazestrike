@@ -6,6 +6,13 @@
 
 #include "settings.h"
 
+struct Vec2 {
+    float x, y;
+    Vec2 operator+(const Vec2& other) const { return {x + other.x, y + other.y}; }
+    Vec2 operator-(const Vec2& other) const { return {x - other.x, y - other.y}; }
+    Vec2 operator*(float scalar) const { return {x * scalar, y * scalar}; }
+};
+
 struct Vec3 {
     float x, y, z;
 

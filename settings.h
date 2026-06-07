@@ -140,6 +140,12 @@ struct MenuSettings {
     int   triggerbot_delay   = 50;
     bool  triggerbot_head_only = true;
 
+    // RCS
+    bool  rcs_enabled = false;
+    int   rcs_bullet = 1;
+    float rcs_scale_x = 1.0f;
+    float rcs_scale_y = 1.0f;
+
     // Crosshair
     bool crosshair_enabled = false;
     int crosshair_shape = 0;

@@ -154,7 +154,7 @@ int main() {
         return 1;
     }
 
-    if (g_settings.aimbot_enabled || g_settings.triggerbot_enabled) {
+    if (g_settings.aimbot_enabled || g_settings.triggerbot_enabled || g_settings.rcs_enabled) {
         start_aimbot_thread();
     }
 
@@ -189,7 +189,7 @@ int main() {
             prev_menu = g_settings.menu_open;
         }
 
-        bool want_aimbot = (g_settings.aimbot_enabled || g_settings.triggerbot_enabled) && g_settings.master_switch;
+        bool want_aimbot = (g_settings.aimbot_enabled || g_settings.triggerbot_enabled || g_settings.rcs_enabled) && g_settings.master_switch;
         if (want_aimbot && !was_aimbot_enabled) {
             start_aimbot_thread();
         }
