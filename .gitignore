@@ -1,0 +1,29 @@
+# Build directories
+/build/
+/out/
+/bin/
+
+# IDE and Compiler specific files
+.vs/
+*.user
+*.suo
+*.db
+*.opendb
+*.vc.db
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeSettings.json
+CMakeUserPresets.json
+
+# Local configurations and logs
+*.log
+cs2esp.ini
+
+# Compiled binaries and libraries
+*.exe
+*.dll
+*.lib
+*.sys
+*.pdb
