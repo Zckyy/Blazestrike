@@ -45,8 +45,8 @@ public:
         ImGui::SameLine(0.0f, 14.0f);
 
         ImVec2 content_size = ImGui::GetContentRegionAvail();
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(26, 18));
-        ImGui::BeginChild("##content", content_size, false);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(28, 22));
+        ImGui::BeginChild("##content", content_size, ImGuiChildFlags_AlwaysUseWindowPadding);
         render_content_panel(content_size);
         ImGui::EndChild();
         ImGui::PopStyleVar();
@@ -312,6 +312,8 @@ private:
             case 6: render_tab_nades();      break;
             case 7: render_tab_menu_style(); break;
         }
+
+        ImGui::Dummy({0, 6});
     }
 
     void add_tooltip(const char* desc) {
