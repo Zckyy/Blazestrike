@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <random>
+#include <cmath>
 #include "settings.h"
 #include "memory/syscalls.h"
 
@@ -27,6 +29,34 @@ struct FontEntry {
 
 class Overlay {
 public:
+    struct ACCENT_POLICY
+    {
+        int AccentState;
+        int AccentFlags;
+        int GradientColor;
+        int AnimationId;
+    };
+
+    struct WINDOWCOMPOSITIONATTRIBDATA
+    {
+        int Attrib;
+        void* pvData;
+        size_t cbData;
+    };
+
+    struct Snowflake
+    {
+        ImVec2 pos;
+        float speed;
+        float size;
+        float opacity;
+        float swing;
+        float swingSpeed;
+        float swingTime;
+    };
+
+    std::vector<Snowflake> snowflakes;
+
     HWND overlay_hwnd = nullptr;
     HWND game_hwnd    = nullptr;
     int  width = 0, height = 0;
@@ -188,6 +218,102 @@ public:
             if (game_hwnd && IsWindow(game_hwnd)) {
                 force_foreground(game_hwnd);
             }
+        }
+    }
+
+    void set_blur(bool enable) {
+        if (using_discord_overlay || !overlay_hwnd) return;
+
+        const HINSTANCE hUser = GetModuleHandleA("user32.dll");
+        if (!hUser) return;
+
+        typedef BOOL(WINAPI* pfnSetWindowCompositionAttribute)(HWND, WINDOWCOMPOSITIONATTRIBDATA*);
+        pfnSetWindowCompositionAttribute setWindowCompositionAttribute = 
+            (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
+        
+        if (!setWindowCompositionAttribute) return;
+
+        ACCENT_POLICY policy = { 0 };
+        if (enable)
+        {
+            policy.AccentState = 3; // ACCENT_ENABLE_BLURBEHIND (frosted glass/Aero effect)
+        }
+        else
+        {
+            policy.AccentState = 0; // ACCENT_DISABLED
+        }
+
+        WINDOWCOMPOSITIONATTRIBDATA data = { 19, &policy, sizeof(ACCENT_POLICY) }; // 19 = WCA_ACCENT_POLICY
+        setWindowCompositionAttribute(overlay_hwnd, &data);
+    }
+
+    void draw_snowflakes(ImDrawList* draw_list) {
+        const int max_particles = 120;
+        float w = (float)width;
+        float h = (float)height;
+
+        if (snowflakes.empty() || snowflakes.size() != max_particles) {
+            snowflakes.resize(max_particles);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis_x(0.0f, w);
+            std::uniform_real_distribution<float> dis_y(0.0f, h);
+            std::uniform_real_distribution<float> dis_speed(30.0f, 80.0f);
+            std::uniform_real_distribution<float> dis_size(1.5f, 4.0f);
+            std::uniform_real_distribution<float> dis_opacity(60.0f, 180.0f);
+            std::uniform_real_distribution<float> dis_swing(5.0f, 25.0f);
+            std::uniform_real_distribution<float> dis_swing_speed(0.5f, 2.0f);
+            std::uniform_real_distribution<float> dis_swing_time(0.0f, 6.28f);
+
+            for (int i = 0; i < max_particles; ++i) {
+                snowflakes[i] = {
+                    ImVec2(dis_x(gen), dis_y(gen)),
+                    dis_speed(gen),
+                    dis_size(gen),
+                    dis_opacity(gen),
+                    dis_swing(gen),
+                    dis_swing_speed(gen),
+                    dis_swing_time(gen)
+                };
+            }
+        }
+
+        float dt = ImGui::GetIO().DeltaTime;
+        if (dt > 0.1f) dt = 0.1f;
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dis_x(0.0f, w);
+        std::uniform_real_distribution<float> dis_speed(30.0f, 80.0f);
+        std::uniform_real_distribution<float> dis_size(1.5f, 4.0f);
+        std::uniform_real_distribution<float> dis_opacity(60.0f, 180.0f);
+        std::uniform_real_distribution<float> dis_swing(5.0f, 25.0f);
+        std::uniform_real_distribution<float> dis_swing_speed(0.5f, 2.0f);
+
+        for (auto& flake : snowflakes) {
+            flake.pos.y += flake.speed * dt;
+            flake.swingTime += flake.swingSpeed * dt;
+
+            float current_x = flake.pos.x + sinf(flake.swingTime) * flake.swing;
+
+            if (flake.pos.y > h || current_x < -50.0f || current_x > w + 50.0f) {
+                flake.pos.y = -10.0f;
+                flake.pos.x = dis_x(gen);
+                flake.speed = dis_speed(gen);
+                flake.size = dis_size(gen);
+                flake.opacity = dis_opacity(gen);
+                flake.swing = dis_swing(gen);
+                flake.swingSpeed = dis_swing_speed(gen);
+                flake.swingTime = 0.0f;
+                current_x = flake.pos.x;
+            }
+
+            draw_list->AddCircleFilled(
+                ImVec2(current_x, flake.pos.y),
+                flake.size,
+                IM_COL32(255, 255, 255, (int)flake.opacity),
+                10
+            );
         }
     }
 

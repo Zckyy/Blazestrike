@@ -172,6 +172,7 @@ int main() {
     std::string last_map_name;
 
     g_overlay.set_interactive(g_settings.menu_open);
+    g_overlay.set_blur(g_settings.menu_open);
 
     while (g_running) {
         auto frame_start = std::chrono::high_resolution_clock::now();
@@ -184,6 +185,7 @@ int main() {
 
         if (g_settings.menu_open != prev_menu) {
             g_overlay.set_interactive(g_settings.menu_open);
+            g_overlay.set_blur(g_settings.menu_open);
             prev_menu = g_settings.menu_open;
         }
 
@@ -197,6 +199,17 @@ int main() {
         was_aimbot_enabled = want_aimbot;
 
         if (!g_overlay.begin_frame()) break;
+
+        if (g_settings.menu_open) {
+            ImDrawList* backgroundDrawList = ImGui::GetBackgroundDrawList();
+            backgroundDrawList->AddRectFilled(
+                ImVec2(0, 0),
+                ImVec2((float)g_overlay.width, (float)g_overlay.height),
+                IM_COL32(0, 0, 0, 120)
+            );
+            g_overlay.draw_snowflakes(backgroundDrawList);
+        }
+
         g_menu.render();
 
         if (!g_settings.master_switch) {
