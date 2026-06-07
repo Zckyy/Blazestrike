@@ -127,7 +127,10 @@ struct MenuSettings {
     int key_aimbot = 'X';
     int aimbot_fov = 5;
     float aimbot_smooth = 1.0f;
-    bool aimbot_head_only = true;
+    bool aimbot_aim_head = true;
+    bool aimbot_aim_neck = true;
+    bool aimbot_aim_chest = true;
+    bool aimbot_aim_pelvis = true;
     bool aimbot_humanized = true;
     float aimbot_jitter = 0.0f;
     float aimbot_curve_strength = 0.0f;

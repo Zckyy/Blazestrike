@@ -243,14 +243,14 @@ static void aimbot_tick() {
     float deg_per_pixel = frame.camera_fov
                         / static_cast<float>(frame.screen_w);
 
-    static const Vec3 AimbotFrame::Target::* bone_list[] = {
-        &AimbotFrame::Target::head_pos,
-        &AimbotFrame::Target::neck_pos,
-        &AimbotFrame::Target::chest_pos,
-        &AimbotFrame::Target::pelvis_pos,
-    };
+    std::vector<Vec3 AimbotFrame::Target::*> active_bones;
+    if (g_settings.aimbot_aim_head)   active_bones.push_back(&AimbotFrame::Target::head_pos);
+    if (g_settings.aimbot_aim_neck)   active_bones.push_back(&AimbotFrame::Target::neck_pos);
+    if (g_settings.aimbot_aim_chest)  active_bones.push_back(&AimbotFrame::Target::chest_pos);
+    if (g_settings.aimbot_aim_pelvis) active_bones.push_back(&AimbotFrame::Target::pelvis_pos);
 
-    int bone_count = g_settings.aimbot_head_only ? 1 : 4;
+    if (active_bones.empty()) return;
+
     auto fov_limit = static_cast<float>(g_settings.aimbot_fov);
 
     // ─── Find closest visible target to crosshair ─────
@@ -268,9 +268,9 @@ static void aimbot_tick() {
         if (!t.valid || t.health <= 0)  continue;
         if (t.team == frame.local_team) continue;
 
-        for (int b = 0; b < bone_count; b++)
+        for (auto bone_ptr : active_bones)
         {
-            Vec3 bone_pos = t.*(bone_list[b]);
+            Vec3 bone_pos = t.*bone_ptr;
 
             AimAngles desired = calculate_angle(eye_pos, bone_pos);
             float fov = get_fov_between(view_angles, desired);
@@ -285,8 +285,6 @@ static void aimbot_tick() {
             best_aim_point = bone_pos;
             found          = true;
             best_target_idx = i;
-
-            break;
         }
     }
 

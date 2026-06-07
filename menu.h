@@ -404,7 +404,11 @@ private:
             render_key_combo("Key",  g_settings.key_aimbot);
             ImGui::SliderInt("Fov", &g_settings.aimbot_fov, 1, 360);
             ImGui::SliderFloat("Smoothing", &g_settings.aimbot_smooth, 1.0f, 20.0f, "%.1f");
-            ImGui::Checkbox("Head only", &g_settings.aimbot_head_only);
+            ImGui::Text("Target Bones:");
+            ImGui::Checkbox("Head##aim", &g_settings.aimbot_aim_head); ImGui::SameLine();
+            ImGui::Checkbox("Neck##aim", &g_settings.aimbot_aim_neck); ImGui::SameLine();
+            ImGui::Checkbox("Chest##aim", &g_settings.aimbot_aim_chest); ImGui::SameLine();
+            ImGui::Checkbox("Pelvis##aim", &g_settings.aimbot_aim_pelvis);
             ImGui::Checkbox("Humanized Aim", &g_settings.aimbot_humanized);
             if (g_settings.aimbot_humanized) {
                 ImGui::Indent();

@@ -160,7 +160,10 @@ public:
         write(f, "aimbot_fov", g_settings.aimbot_fov);
         write(f, "key_aimbot", g_settings.key_aimbot);
         write(f, "aimbot_smooth", g_settings.aimbot_smooth);
-        write(f, "aimbot_head_only", g_settings.aimbot_head_only);
+        write(f, "aimbot_aim_head", g_settings.aimbot_aim_head);
+        write(f, "aimbot_aim_neck", g_settings.aimbot_aim_neck);
+        write(f, "aimbot_aim_chest", g_settings.aimbot_aim_chest);
+        write(f, "aimbot_aim_pelvis", g_settings.aimbot_aim_pelvis);
         write(f, "aimbot_humanized", g_settings.aimbot_humanized);
         write(f, "aimbot_jitter", g_settings.aimbot_jitter);
         write(f, "aimbot_curve_strength", g_settings.aimbot_curve_strength);
@@ -324,7 +327,10 @@ public:
         read(kv, "aimbot_fov", g_settings.aimbot_fov);
         read(kv, "key_aimbot", g_settings.key_aimbot);
         read(kv, "aimbot_smooth", g_settings.aimbot_smooth);
-        read(kv, "aimbot_head_only", g_settings.aimbot_head_only);
+        read(kv, "aimbot_aim_head", g_settings.aimbot_aim_head);
+        read(kv, "aimbot_aim_neck", g_settings.aimbot_aim_neck);
+        read(kv, "aimbot_aim_chest", g_settings.aimbot_aim_chest);
+        read(kv, "aimbot_aim_pelvis", g_settings.aimbot_aim_pelvis);
         read(kv, "aimbot_humanized", g_settings.aimbot_humanized);
         read(kv, "aimbot_jitter", g_settings.aimbot_jitter);
         read(kv, "aimbot_curve_strength", g_settings.aimbot_curve_strength);
