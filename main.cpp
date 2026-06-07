@@ -22,6 +22,7 @@
 #include "radar.h"
 #include "grenades.h"
 #include "input/input.h"
+#include "bomb_timer.h"
 
 static const char* CONFIG_PATH = "config.ini";
 static volatile bool g_running = true;
@@ -222,6 +223,8 @@ int main() {
         FrameState state = entity_reader.read_frame(
             g_overlay.width, g_overlay.height);
 
+        g_bomb_timer.update();
+
         if (g_settings.aimbot_enabled || g_settings.triggerbot_enabled)
         {
             AimbotFrame af{};
@@ -312,6 +315,7 @@ int main() {
             state.map_scale, g_overlay.width, g_overlay.height);
 
         g_spectators.draw(g_overlay.width);
+        g_bomb_timer.draw(g_overlay.width, g_overlay.height);
 
         ImDrawList* fg = ImGui::GetForegroundDrawList();
         Crosshair::Config xhair_cfg = {

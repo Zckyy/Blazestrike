@@ -454,6 +454,11 @@ private:
     void render_tab_misc() {
         ImGui::Spacing();
 
+        ImGui::Text("Bomb Timer");
+        ImGui::Checkbox("Show Bomb Timer", &g_settings.bomb_timer_enabled);
+
+        ImGui::Separator();
+
         ImGui::Text("Spectator List");
         ImGui::Checkbox("Show Spectators", &g_settings.draw_spectators);
         if (g_settings.draw_spectators) {

@@ -9,7 +9,7 @@
 
 struct Offsets {
     struct {
-        uint32_t dwEntityList, dwViewMatrix, dwViewRender, dwLocalPlayerPawn, dwLocalPlayerController, dwGlobalVars, dwSensitivity, dwSensitivity_sensitivity;
+        uint32_t dwEntityList, dwViewMatrix, dwViewRender, dwLocalPlayerPawn, dwLocalPlayerController, dwGlobalVars, dwSensitivity, dwSensitivity_sensitivity, dwPlantedC4;
     } client;
     struct {
         uint32_t m_iTeamNum, m_pGameSceneNode, m_iHealth;
@@ -60,6 +60,9 @@ struct Offsets {
     struct {
         uint32_t m_bSpotted;
     } EntitySpottedState_t;
+    struct {
+        uint32_t m_nBombSite, m_bBombDefused, m_flDefuseCountDown, m_flC4Blow, m_bBeingDefused;
+    } C_PlantedC4;
 
     bool load(const std::string& offsets_path, const std::string& client_dll_path) {
         if (!std::filesystem::exists(offsets_path) ||
@@ -125,6 +128,7 @@ private:
             client.dwGlobalVars = cl["dwGlobalVars"];
             client.dwSensitivity = cl["dwSensitivity"];
             client.dwSensitivity_sensitivity = cl["dwSensitivity_sensitivity"];
+            client.dwPlantedC4 = cl["dwPlantedC4"];
 
             auto& cs = cj["client.dll"]["classes"];
             C_BaseEntity.m_iTeamNum = cs["C_BaseEntity"]["fields"]["m_iTeamNum"];
@@ -163,6 +167,12 @@ private:
             CCSPlayer_AimPunchServices.m_unpredictableBaseTick = cs["CCSPlayer_AimPunchServices"]["fields"]["m_unpredictableBaseTick"];
             CCSPlayer_AimPunchServices.aimPunchCache = CCSPlayer_AimPunchServices.m_unpredictableBaseTick - 0x18;
             EntitySpottedState_t.m_bSpotted = cs["EntitySpottedState_t"]["fields"]["m_bSpotted"];
+
+            C_PlantedC4.m_nBombSite = cs["C_PlantedC4"]["fields"]["m_nBombSite"];
+            C_PlantedC4.m_bBombDefused = cs["C_PlantedC4"]["fields"]["m_bBombDefused"];
+            C_PlantedC4.m_flDefuseCountDown = cs["C_PlantedC4"]["fields"]["m_flDefuseCountDown"];
+            C_PlantedC4.m_flC4Blow = cs["C_PlantedC4"]["fields"]["m_flC4Blow"];
+            C_PlantedC4.m_bBeingDefused = cs["C_PlantedC4"]["fields"]["m_bBeingDefused"];
 
             return true;
         } catch (const std::exception& e) {

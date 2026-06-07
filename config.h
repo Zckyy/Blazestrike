@@ -66,6 +66,7 @@ public:
         write(f, "draw_spectators", g_settings.draw_spectators);
         write(f, "spec_x", g_settings.spec_x);
         write(f, "spec_y", g_settings.spec_y);
+        write(f, "bomb_timer_enabled", g_settings.bomb_timer_enabled);
 
         f << "\n[Radar]\n";
         write(f, "draw_radar", g_settings.draw_radar);
@@ -249,6 +250,7 @@ public:
         read(kv, "draw_spectators", g_settings.draw_spectators);
         read(kv, "spec_x", g_settings.spec_x);
         read(kv, "spec_y", g_settings.spec_y);
+        read(kv, "bomb_timer_enabled", g_settings.bomb_timer_enabled);
 
         read(kv, "draw_radar", g_settings.draw_radar);
         read(kv, "radar_circle", g_settings.radar_circle);

@@ -104,6 +104,9 @@ struct MenuSettings {
     float spec_x = -1.0f;
     float spec_y = 30.0f;
 
+    // Bomb Timer
+    bool bomb_timer_enabled = true;
+
     // Grenade Helper
     bool  grenade_helper_enabled    = false;
     bool  grenade_helper_visible    = true;

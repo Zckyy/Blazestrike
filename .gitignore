@@ -28,3 +28,5 @@ config.ini
 *.lib
 *.sys
 *.pdb
+/offsets
+/output
