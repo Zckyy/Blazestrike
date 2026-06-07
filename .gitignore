@@ -20,6 +20,7 @@ CMakeUserPresets.json
 # Local configurations and logs
 *.log
 cs2esp.ini
+config.ini
 
 # Compiled binaries and libraries
 *.exe

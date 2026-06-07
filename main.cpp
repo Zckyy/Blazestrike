@@ -23,7 +23,7 @@
 #include "grenades.h"
 #include "input/input.h"
 
-static const char* CONFIG_PATH = "cs2esp.ini";
+static const char* CONFIG_PATH = "config.ini";
 static volatile bool g_running = true;
 static bool g_driver_backend_active = false;
 

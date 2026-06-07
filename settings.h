@@ -163,9 +163,9 @@ struct MenuSettings {
     float menu_font_size = 14.0f;
 
     // Key binds
-    int key_menu = VK_F1;
-    int key_master = VK_F2;
-    int key_exit = VK_INSERT;
+    int key_menu = VK_INSERT;
+    int key_master = VK_DELETE;
+    int key_exit = VK_F12;
 
     void reset() { *this = MenuSettings{}; }
 };
