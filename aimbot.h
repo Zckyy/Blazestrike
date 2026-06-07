@@ -477,6 +477,11 @@ namespace RCS
             return;
         }
 
+        if (g_settings.rcs_only_while_aiming && !g_aimbot_was_aiming) {
+            OldPunch = { 0, 0 };
+            return;
+        }
+
         int shots_fired = 0;
         if (!g_memory->read_raw(local_pawn + g_offsets.C_CSPlayerPawn.m_iShotsFired, &shots_fired, sizeof(shots_fired))) {
             OldPunch = { 0, 0 };

@@ -178,6 +178,7 @@ public:
         write(f, "rcs_bullet", g_settings.rcs_bullet);
         write(f, "rcs_scale_x", g_settings.rcs_scale_x);
         write(f, "rcs_scale_y", g_settings.rcs_scale_y);
+        write(f, "rcs_only_while_aiming", g_settings.rcs_only_while_aiming);
 
         f.close();
         return true;
@@ -339,6 +340,7 @@ public:
         read(kv, "rcs_bullet", g_settings.rcs_bullet);
         read(kv, "rcs_scale_x", g_settings.rcs_scale_x);
         read(kv, "rcs_scale_y", g_settings.rcs_scale_y);
+        read(kv, "rcs_only_while_aiming", g_settings.rcs_only_while_aiming);
 
         return true;
     }

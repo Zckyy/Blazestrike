@@ -145,6 +145,7 @@ struct MenuSettings {
     int   rcs_bullet = 1;
     float rcs_scale_x = 1.0f;
     float rcs_scale_y = 1.0f;
+    bool  rcs_only_while_aiming = false;
 
     // Crosshair
     bool crosshair_enabled = false;

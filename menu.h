@@ -46,6 +46,7 @@ public:
             if (ImGui::BeginTabItem("ESP"))   { render_tab_esp();   ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Radar")) { render_tab_radar(); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Aim"))  { render_tab_aim();  ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem("RCS"))  { render_tab_rcs();  ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Misc"))  { render_tab_misc();  ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Nades")) { render_tab_nades(); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Menu"))  { render_tab_menu_style(); ImGui::EndTabItem(); }
@@ -417,18 +418,6 @@ private:
 
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::Checkbox("Enable Recoil Control", &g_settings.rcs_enabled);
-
-        if (g_settings.rcs_enabled) {
-            ImGui::Indent();
-            ImGui::SliderInt("Start Bullet", &g_settings.rcs_bullet, 1, 30);
-            ImGui::SliderFloat("RCS Scale X", &g_settings.rcs_scale_x, 0.0f, 2.0f, "%.2f");
-            ImGui::SliderFloat("RCS Scale Y", &g_settings.rcs_scale_y, 0.0f, 2.0f, "%.2f");
-            ImGui::Unindent();
-        }
-
-        ImGui::Separator();
-        ImGui::Spacing();
 
         ImGui::Checkbox("Enable triggerbot", &g_settings.triggerbot_enabled);
 
@@ -437,6 +426,22 @@ private:
             render_key_combo("Trigger key", g_settings.key_triggerbot);
             ImGui::SliderInt("Delay ms", &g_settings.triggerbot_delay, 0, 300);
             ImGui::Checkbox("Head only##trigger", &g_settings.triggerbot_head_only);
+        }
+
+        ImGui::Separator();
+    }
+
+    void render_tab_rcs() {
+        ImGui::Spacing();
+        ImGui::Checkbox("Enable Recoil Control", &g_settings.rcs_enabled);
+
+        if (g_settings.rcs_enabled) {
+            ImGui::Indent();
+            ImGui::Checkbox("Only whilst aiming", &g_settings.rcs_only_while_aiming);
+            ImGui::SliderInt("Start Bullet", &g_settings.rcs_bullet, 1, 30);
+            ImGui::SliderFloat("RCS Scale X", &g_settings.rcs_scale_x, 0.0f, 2.0f, "%.2f");
+            ImGui::SliderFloat("RCS Scale Y", &g_settings.rcs_scale_y, 0.0f, 2.0f, "%.2f");
+            ImGui::Unindent();
         }
 
         ImGui::Separator();
