@@ -65,7 +65,7 @@ public:
             // Sidebar width is SIDEBAR_WIDTH (172.0f).
             float sidebar_center_x = pos.x + 14.0f + (SIDEBAR_WIDTH * 0.5f);
             float gif_x = sidebar_center_x - (gif_w * 0.5f);
-            float gap = 20.0f; // Gap between gif and window
+            float gap = 0.0f; // Gap between gif and window
             float gif_y = pos.y - gif_h - gap;
 
             ImGui::SetNextWindowPos({gif_x, gif_y});
