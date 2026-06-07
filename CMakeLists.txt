@@ -89,4 +89,6 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         ${CMAKE_SOURCE_DIR}/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/grenades.json $<TARGET_FILE_DIR:${PROJECT_NAME}>/grenades.json
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/cat-orange-cat.gif $<TARGET_FILE_DIR:${PROJECT_NAME}>/cat-orange-cat.gif
 )

@@ -7,6 +7,7 @@
 #include "grenades.h"
 #include "overlay.h"
 #include "weapon_icons.h"
+#include "gif_loader.h"
 
 class Menu {
 public:
@@ -52,6 +53,41 @@ public:
         ImGui::PopStyleVar();
 
         ImGui::End();
+
+        // Render the spinning cat GIF outside the main window, centered over the sidebar
+        auto srv = g_menu_cat_gif.get_current_frame((float)ImGui::GetTime());
+        if (srv) {
+            float gif_w = g_menu_cat_gif.width > 0 ? (float)g_menu_cat_gif.width : 200.0f;
+            float gif_h = g_menu_cat_gif.height > 0 ? (float)g_menu_cat_gif.height : 200.0f;
+            
+            // Align horizontally with the center of the sidebar.
+            // Sidebar starts at pos.x + 14 (WindowPadding.x).
+            // Sidebar width is SIDEBAR_WIDTH (172.0f).
+            float sidebar_center_x = pos.x + 14.0f + (SIDEBAR_WIDTH * 0.5f);
+            float gif_x = sidebar_center_x - (gif_w * 0.5f);
+            float gap = 20.0f; // Gap between gif and window
+            float gif_y = pos.y - gif_h - gap;
+
+            ImGui::SetNextWindowPos({gif_x, gif_y});
+            ImGui::SetNextWindowSize({gif_w, gif_h});
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            
+            ImGui::Begin("##catgifwindow", nullptr, 
+                         ImGuiWindowFlags_NoDecoration | 
+                         ImGuiWindowFlags_NoBackground | 
+                         ImGuiWindowFlags_NoInputs | 
+                         ImGuiWindowFlags_NoMove | 
+                         ImGuiWindowFlags_NoResize | 
+                         ImGuiWindowFlags_NoSavedSettings | 
+                         ImGuiWindowFlags_NoScrollWithMouse);
+            
+            ImGui::Image((ImTextureID)srv, {gif_w, gif_h});
+            
+            ImGui::End();
+            ImGui::PopStyleVar(2);
+        }
+
         ImGui::PopFont();
     }
 
@@ -235,6 +271,8 @@ private:
         float  w  = ImGui::GetContentRegionAvail().x;
         const float item_h = 38.0f;
         const float gap    = 4.0f;
+
+
 
         for (int i = 0; i < NAV_COUNT; i++) {
             ImVec2 p = ImGui::GetCursorScreenPos();

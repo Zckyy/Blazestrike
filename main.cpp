@@ -25,6 +25,7 @@
 #include "bomb_timer.h"
 #include "vote_teller.h"
 #include "enemy_info_box.h"
+#include "gif_loader.h"
 
 static const char* CONFIG_PATH = "config.ini";
 static volatile bool g_running = true;
@@ -162,6 +163,9 @@ int main() {
     }
 
     g_weapon_icons.init(g_overlay.get_device());
+    if (!g_menu_cat_gif.load(g_overlay.get_device(), "cat-orange-cat.gif")) {
+        g_menu_cat_gif.load(g_overlay.get_device(), "C:\\Users\\blazi\\Desktop\\Personal Dev Work\\Blazestrike\\cat-orange-cat.gif");
+    }
 
     printf("[+] %s = menu | %s = master toggle | %s = exit\n",
            vk_name(g_settings.key_menu),
@@ -350,6 +354,7 @@ int main() {
     // Clean exit
     printf("\n[*] Shutting down...\n");
     g_weapon_icons.shutdown();
+    g_menu_cat_gif.shutdown();
     g_overlay.shutdown();
     cleanup_on_exit();
     CoUninitialize();
