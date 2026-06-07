@@ -15,9 +15,13 @@ public:
     void render() {
         if (!g_settings.menu_open) return;
 
+        if (g_settings.menu_tab < 0 || g_settings.menu_tab >= NAV_COUNT)
+            g_settings.menu_tab = 0;
+
         if (g_settings.menu_x >= 0 && g_settings.menu_y >= 0)
             ImGui::SetNextWindowPos({g_settings.menu_x, g_settings.menu_y}, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize({560, 520}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({760, 560}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSizeConstraints({620, 420}, {FLT_MAX, FLT_MAX});
 
         ImGui::PushFont(g_overlay.menu_font);
 
@@ -28,36 +32,49 @@ public:
         g_settings.menu_x = pos.x;
         g_settings.menu_y = pos.y;
 
-        ImGui::PushFont(g_overlay.menu_title_font);
-        ImVec4 accent = {g_settings.menu_accent_color[0], g_settings.menu_accent_color[1],
-                         g_settings.menu_accent_color[2], g_settings.menu_accent_color[3]};
-        ImGui::TextColored(accent, "BlazeStrike");
-        ImGui::SameLine(ImGui::GetWindowWidth() - 130);
-        if (g_settings.master_switch)
-            ImGui::TextColored({0.3f, 1.0f, 0.3f, 1}, "[ACTIVE]");
-        else
-            ImGui::TextColored({1.0f, 0.3f, 0.3f, 1}, "[OFF]");
-        ImGui::PopFont();
+        render_header();
+        ImGui::Dummy({0, 6});
 
-        ImGui::Separator();
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
+        ImGui::BeginChild("##sidebar", {SIDEBAR_WIDTH, avail.y}, false, ImGuiWindowFlags_NoScrollbar);
+        render_sidebar();
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
 
-        if (ImGui::BeginTabBar("##tabs")) {
-            if (ImGui::BeginTabItem("Main"))  { render_tab_main();  ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem("ESP"))   { render_tab_esp();   ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem("Radar")) { render_tab_radar(); ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem("Aim"))  { render_tab_aim();  ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem("RCS"))  { render_tab_rcs();  ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem("Misc"))  { render_tab_misc();  ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem("Nades")) { render_tab_nades(); ImGui::EndTabItem(); }
-            if (ImGui::BeginTabItem("Menu"))  { render_tab_menu_style(); ImGui::EndTabItem(); }
-            ImGui::EndTabBar();
-        }
+        ImGui::SameLine(0.0f, 14.0f);
+
+        ImVec2 content_size = ImGui::GetContentRegionAvail();
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(26, 18));
+        ImGui::BeginChild("##content", content_size, false);
+        render_content_panel(content_size);
+        ImGui::EndChild();
+        ImGui::PopStyleVar();
 
         ImGui::End();
         ImGui::PopFont();
     }
 
 private:
+    enum NavIcon { ICON_HOME, ICON_EYE, ICON_RADAR, ICON_TARGET, ICON_WAVE, ICON_GRID, ICON_ORB, ICON_SLIDERS };
+    struct NavItem { const char* label; const char* subtitle; int icon; };
+
+    static constexpr int   NAV_COUNT     = 8;
+    static constexpr float SIDEBAR_WIDTH = 172.0f;
+
+    static constexpr NavItem nav_items[NAV_COUNT] = {
+        {"Main",  "Status, hotkeys & performance", ICON_HOME},
+        {"ESP",   "Player rendering & overlays",   ICON_EYE},
+        {"Radar", "2D minimap overlay",            ICON_RADAR},
+        {"Aim",   "Aimbot & triggerbot",           ICON_TARGET},
+        {"RCS",   "Recoil compensation",           ICON_WAVE},
+        {"Misc",  "Crosshair, spectators & HUD",   ICON_GRID},
+        {"Nades", "Grenade lineup helper",         ICON_ORB},
+        {"Menu",  "Appearance & theming",          ICON_SLIDERS},
+    };
+
+    float nav_anim[NAV_COUNT] = {};
+
     bool bind_waiting_menu = false;
     bool bind_waiting_master = false;
     bool bind_waiting_exit = false;
@@ -67,6 +84,235 @@ private:
     bool bind_waiting_nade_delete = false;
     bool bind_waiting_aimbot = false;
     bool bind_waiting_trigger = false;
+
+    ImVec4 get_accent() const {
+        return { g_settings.menu_accent_color[0], g_settings.menu_accent_color[1],
+                 g_settings.menu_accent_color[2], g_settings.menu_accent_color[3] };
+    }
+
+    static ImVec4 lerp4(const ImVec4& a, const ImVec4& b, float t) {
+        return { a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t,
+                 a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t };
+    }
+
+    // ---- Soft glow primitives (faked blur via stacked translucent shapes) ----
+    static void draw_glow_circle(ImDrawList* dl, ImVec2 center, float radius, ImVec4 color,
+                                 float intensity, int layers = 5) {
+        for (int i = layers; i >= 1; i--) {
+            float t = (float)i / layers;
+            float r = radius + t * radius * 1.6f;
+            float a = intensity * (1.0f - t) * (1.0f - t);
+            dl->AddCircleFilled(center, r, ImGui::ColorConvertFloat4ToU32({color.x, color.y, color.z, a}), 28);
+        }
+    }
+
+    static void draw_glow_rect(ImDrawList* dl, ImVec2 mn, ImVec2 mx, ImVec4 color, float rounding,
+                               float intensity, int layers = 4, float spread = 9.0f) {
+        for (int i = layers; i >= 1; i--) {
+            float t = (float)i / layers;
+            float e = spread * t;
+            float a = intensity * (1.0f - t) * (1.0f - t);
+            dl->AddRectFilled({mn.x - e, mn.y - e}, {mx.x + e, mx.y + e},
+                              ImGui::ColorConvertFloat4ToU32({color.x, color.y, color.z, a}), rounding + e);
+        }
+    }
+
+    static void draw_nav_icon(ImDrawList* dl, ImVec2 c, int type, float r, ImU32 col) {
+        switch (type) {
+        case ICON_HOME:
+            dl->AddRect({c.x - r, c.y - r}, {c.x + r, c.y + r}, col, 3.0f, 0, 1.4f);
+            dl->AddCircleFilled(c, r * 0.32f, col, 12);
+            break;
+        case ICON_EYE:
+            dl->AddBezierQuadratic({c.x - r, c.y}, {c.x, c.y - r * 0.9f}, {c.x + r, c.y}, col, 1.4f, 16);
+            dl->AddBezierQuadratic({c.x - r, c.y}, {c.x, c.y + r * 0.9f}, {c.x + r, c.y}, col, 1.4f, 16);
+            dl->AddCircleFilled(c, r * 0.30f, col, 12);
+            break;
+        case ICON_RADAR:
+            dl->AddCircle(c, r, col, 20, 1.3f);
+            dl->AddCircle(c, r * 0.55f, col, 16, 1.1f);
+            dl->AddLine(c, {c.x + r * 0.95f, c.y - r * 0.55f}, col, 1.4f);
+            break;
+        case ICON_TARGET:
+            dl->AddCircle(c, r, col, 20, 1.4f);
+            dl->AddCircleFilled(c, 1.6f, col, 8);
+            dl->AddLine({c.x - r - 3, c.y}, {c.x - r + 2, c.y}, col, 1.3f);
+            dl->AddLine({c.x + r - 2, c.y}, {c.x + r + 3, c.y}, col, 1.3f);
+            dl->AddLine({c.x, c.y - r - 3}, {c.x, c.y - r + 2}, col, 1.3f);
+            dl->AddLine({c.x, c.y + r - 2}, {c.x, c.y + r + 3}, col, 1.3f);
+            break;
+        case ICON_WAVE:
+            dl->AddLine({c.x - r, c.y - r * 0.5f}, {c.x - r * 0.2f, c.y + r * 0.2f}, col, 1.5f);
+            dl->AddLine({c.x - r * 0.2f, c.y + r * 0.2f}, {c.x + r * 0.5f, c.y - r * 0.35f}, col, 1.5f);
+            dl->AddLine({c.x + r * 0.5f, c.y - r * 0.35f}, {c.x + r, c.y + r * 0.35f}, col, 1.5f);
+            dl->AddTriangleFilled({c.x + r * 0.65f, c.y + r * 0.10f},
+                                  {c.x + r * 1.15f, c.y + r * 0.10f},
+                                  {c.x + r * 0.90f, c.y + r * 0.65f}, col);
+            break;
+        case ICON_GRID: {
+            float o = r * 0.5f;
+            dl->AddCircleFilled({c.x - o, c.y - o}, 1.7f, col, 8);
+            dl->AddCircleFilled({c.x + o, c.y - o}, 1.7f, col, 8);
+            dl->AddCircleFilled({c.x - o, c.y + o}, 1.7f, col, 8);
+            dl->AddCircleFilled({c.x + o, c.y + o}, 1.7f, col, 8);
+            break;
+        }
+        case ICON_ORB:
+            dl->AddCircle(c, r, col, 20, 1.3f);
+            dl->AddCircleFilled({c.x - r * 0.32f, c.y - r * 0.32f}, r * 0.34f, col, 12);
+            break;
+        case ICON_SLIDERS:
+            for (int i = 0; i < 3; i++) {
+                float y  = c.y - r + i * r;
+                float kx = c.x + (i == 0 ? -r * 0.4f : (i == 1 ? r * 0.35f : -r * 0.1f));
+                dl->AddLine({c.x - r, y}, {c.x + r, y}, col, 1.3f);
+                dl->AddCircleFilled({kx, y}, 2.1f, col, 10);
+            }
+            break;
+        }
+    }
+
+    void render_header() {
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        ImVec2 p = ImGui::GetCursorScreenPos();
+        float  w = ImGui::GetContentRegionAvail().x;
+        ImVec4 accent     = get_accent();
+        ImU32  accent_u32 = ImGui::ColorConvertFloat4ToU32(accent);
+        float  header_h   = 44.0f;
+
+        // Glowing diamond logo glyph
+        ImVec2 logo_c = {p.x + 17, p.y + header_h * 0.5f};
+        draw_glow_circle(dl, logo_c, 9.0f, accent, 0.45f);
+        ImVec2 dpts[4] = { {logo_c.x, logo_c.y - 9}, {logo_c.x + 9, logo_c.y},
+                           {logo_c.x, logo_c.y + 9}, {logo_c.x - 9, logo_c.y} };
+        dl->AddConvexPolyFilled(dpts, 4, accent_u32);
+        ImVec2 ipts[4] = { {logo_c.x, logo_c.y - 4}, {logo_c.x + 4, logo_c.y},
+                           {logo_c.x, logo_c.y + 4}, {logo_c.x - 4, logo_c.y} };
+        dl->AddConvexPolyFilled(ipts, 4, ImGui::ColorConvertFloat4ToU32({0.05f, 0.05f, 0.07f, 0.9f}));
+
+        float title_h = g_overlay.menu_title_font ? g_overlay.menu_title_font->FontSize : ImGui::GetFontSize();
+        ImGui::PushFont(g_overlay.menu_title_font);
+        ImGui::SetCursorScreenPos({p.x + 38, p.y + header_h * 0.5f - title_h - 1.0f});
+        ImGui::TextColored(accent, "BlazeStrike");
+        ImGui::PopFont();
+
+        ImGui::SetCursorScreenPos({p.x + 38, p.y + header_h * 0.5f + 2.0f});
+        ImGui::TextColored({0.45f, 0.50f, 0.50f, 1.0f}, "Performance Suite");
+
+        // Status pill, glowing, right-aligned
+        bool active = g_settings.master_switch;
+        ImVec4 status_col = active ? ImVec4{0.35f, 0.95f, 0.55f, 1.0f} : ImVec4{0.95f, 0.40f, 0.40f, 1.0f};
+        ImU32  status_u32 = ImGui::ColorConvertFloat4ToU32(status_col);
+        const char* status_txt = active ? "ACTIVE" : "DISABLED";
+        ImVec2 ts = ImGui::CalcTextSize(status_txt);
+        float pill_w = ts.x + 32.0f, pill_h = 24.0f;
+        ImVec2 pill_min = {p.x + w - pill_w, p.y + (header_h - pill_h) * 0.5f};
+        ImVec2 pill_max = {pill_min.x + pill_w, pill_min.y + pill_h};
+        draw_glow_rect(dl, pill_min, pill_max, status_col, pill_h * 0.5f, 0.30f, 3, 7.0f);
+        dl->AddRectFilled(pill_min, pill_max,
+                          ImGui::ColorConvertFloat4ToU32({status_col.x, status_col.y, status_col.z, 0.14f}), pill_h * 0.5f);
+        dl->AddRect(pill_min, pill_max,
+                    ImGui::ColorConvertFloat4ToU32({status_col.x, status_col.y, status_col.z, 0.55f}), pill_h * 0.5f, 0, 1.2f);
+        ImVec2 dot_c = {pill_min.x + 15, (pill_min.y + pill_max.y) * 0.5f};
+        dl->AddCircleFilled(dot_c, 3.0f, status_u32, 12);
+        dl->AddText({dot_c.x + 9, (pill_min.y + pill_max.y) * 0.5f - ts.y * 0.5f}, status_u32, status_txt);
+
+        // Gradient separator: fades in from the edges toward the center
+        ImGui::SetCursorScreenPos({p.x, p.y + header_h + 6.0f});
+        ImVec2 sp = ImGui::GetCursorScreenPos();
+        ImU32 fade  = ImGui::ColorConvertFloat4ToU32({accent.x, accent.y, accent.z, 0.0f});
+        ImU32 solid = ImGui::ColorConvertFloat4ToU32({accent.x, accent.y, accent.z, 0.5f});
+        dl->AddRectFilledMultiColor(sp, {sp.x + w * 0.5f, sp.y + 1.4f}, fade, solid, solid, fade);
+        dl->AddRectFilledMultiColor({sp.x + w * 0.5f, sp.y}, {sp.x + w, sp.y + 1.4f}, solid, fade, fade, solid);
+
+        ImGui::SetCursorScreenPos({p.x, sp.y + 10.0f});
+    }
+
+    void render_sidebar() {
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        ImVec4 accent = get_accent();
+        float  dt = ImGui::GetIO().DeltaTime;
+        float  w  = ImGui::GetContentRegionAvail().x;
+        const float item_h = 38.0f;
+        const float gap    = 4.0f;
+
+        for (int i = 0; i < NAV_COUNT; i++) {
+            ImVec2 p = ImGui::GetCursorScreenPos();
+            ImGui::PushID(i);
+            ImGui::InvisibleButton("##navitem", {w, item_h});
+            bool hovered = ImGui::IsItemHovered();
+            bool active  = (g_settings.menu_tab == i);
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+                g_settings.menu_tab = i;
+            ImGui::PopID();
+
+            // Smoothly animate the highlight strength toward its target each frame
+            float target = active ? 1.0f : (hovered ? 0.45f : 0.0f);
+            float speed  = std::min(dt * 14.0f, 1.0f);
+            nav_anim[i] += (target - nav_anim[i]) * speed;
+            float a = nav_anim[i];
+
+            ImVec2 pmax = {p.x + w, p.y + item_h};
+            if (a > 0.01f)
+                dl->AddRectFilled(p, pmax,
+                    ImGui::ColorConvertFloat4ToU32({accent.x, accent.y, accent.z, 0.12f * a}), 8.0f);
+
+            if (a > 0.02f) {
+                ImVec2 bar_min = {p.x + 1, p.y + item_h * 0.24f};
+                ImVec2 bar_max = {p.x + 4, p.y + item_h * 0.76f};
+                ImVec4 bar_col = {accent.x, accent.y, accent.z, a};
+                draw_glow_rect(dl, bar_min, bar_max, bar_col, 2.0f, 0.4f * a, 3, 6.0f);
+                dl->AddRectFilled(bar_min, bar_max, ImGui::ColorConvertFloat4ToU32(bar_col), 2.0f);
+            }
+
+            ImVec2 icon_c = {p.x + 26.0f, p.y + item_h * 0.5f};
+            ImVec4 icon_col = lerp4({0.50f, 0.55f, 0.55f, 1.0f}, accent, a);
+            draw_nav_icon(dl, icon_c, nav_items[i].icon, 7.0f, ImGui::ColorConvertFloat4ToU32(icon_col));
+
+            ImVec4 text_col = lerp4({0.62f, 0.66f, 0.66f, 1.0f}, {0.95f, 0.97f, 0.96f, 1.0f}, a);
+            ImVec2 ts = ImGui::CalcTextSize(nav_items[i].label);
+            dl->AddText({p.x + 46.0f, p.y + (item_h - ts.y) * 0.5f},
+                        ImGui::ColorConvertFloat4ToU32(text_col), nav_items[i].label);
+
+            ImGui::SetCursorScreenPos({p.x, pmax.y + gap});
+        }
+    }
+
+    void render_content_panel(ImVec2 size) {
+        ImDrawList* dl   = ImGui::GetWindowDrawList();
+        ImVec2 cmin = ImGui::GetWindowPos();
+        ImVec2 cmax = {cmin.x + size.x, cmin.y + size.y};
+        ImVec4 accent = get_accent();
+
+        dl->AddRectFilled(cmin, cmax, ImGui::ColorConvertFloat4ToU32({1.0f, 1.0f, 1.0f, 0.025f}), 10.0f);
+        dl->AddRect(cmin, cmax, ImGui::ColorConvertFloat4ToU32({accent.x, accent.y, accent.z, 0.16f}), 10.0f, 0, 1.0f);
+
+        const NavItem& active = nav_items[g_settings.menu_tab];
+
+        ImGui::Spacing();
+        ImGui::PushFont(g_overlay.menu_title_font);
+        ImGui::TextColored(accent, "%s", active.label);
+        ImGui::PopFont();
+        ImGui::TextColored({0.50f, 0.55f, 0.55f, 1.0f}, "%s", active.subtitle);
+
+        ImVec2 sp = ImGui::GetCursorScreenPos();
+        float  sw = ImGui::GetContentRegionAvail().x;
+        ImU32 fade  = ImGui::ColorConvertFloat4ToU32({accent.x, accent.y, accent.z, 0.0f});
+        ImU32 solid = ImGui::ColorConvertFloat4ToU32({accent.x, accent.y, accent.z, 0.45f});
+        dl->AddRectFilledMultiColor(sp, {sp.x + sw, sp.y + 1.2f}, solid, fade, fade, solid);
+        ImGui::Dummy({0, 10});
+
+        switch (g_settings.menu_tab) {
+            case 0: render_tab_main();       break;
+            case 1: render_tab_esp();        break;
+            case 2: render_tab_radar();      break;
+            case 3: render_tab_aim();        break;
+            case 4: render_tab_rcs();        break;
+            case 5: render_tab_misc();       break;
+            case 6: render_tab_nades();      break;
+            case 7: render_tab_menu_style(); break;
+        }
+    }
 
     void add_tooltip(const char* desc) {
         if (ImGui::IsItemHovered()) {
