@@ -128,6 +128,11 @@ struct MenuSettings {
     int aimbot_fov = 5;
     float aimbot_smooth = 1.0f;
     bool aimbot_head_only = true;
+    bool aimbot_humanized = true;
+    float aimbot_jitter = 0.0f;
+    float aimbot_curve_strength = 0.0f;
+    float aimbot_ease_in = 0.15f;
+    float aimbot_ease_out = 0.35f;
 
     // Trigger
     bool  triggerbot_enabled = false;

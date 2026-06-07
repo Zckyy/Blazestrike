@@ -417,6 +417,15 @@ private:
             ImGui::SliderInt("Fov", &g_settings.aimbot_fov, 1, 360);
             ImGui::SliderFloat("Smoothing", &g_settings.aimbot_smooth, 1.0f, 20.0f, "%.1f");
             ImGui::Checkbox("Head only", &g_settings.aimbot_head_only);
+            ImGui::Checkbox("Humanized Aim", &g_settings.aimbot_humanized);
+            if (g_settings.aimbot_humanized) {
+                ImGui::Indent();
+                ImGui::SliderFloat("Curve Strength", &g_settings.aimbot_curve_strength, 0.0f, 15.0f, "%.1f");
+                ImGui::SliderFloat("Jitter", &g_settings.aimbot_jitter, 0.0f, 10.0f, "%.1f");
+                ImGui::SliderFloat("Ease-In", &g_settings.aimbot_ease_in, 0.0f, 1.0f, "%.2f");
+                ImGui::SliderFloat("Ease-Out", &g_settings.aimbot_ease_out, 0.0f, 1.0f, "%.2f");
+                ImGui::Unindent();
+            }
         }
 
         ImGui::Separator();

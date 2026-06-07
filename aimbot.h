@@ -19,6 +19,11 @@ static std::atomic<bool> g_aimbot_running{ false };
 static float aim_error_x = 0.0f;
 static float aim_error_y = 0.0f;
 
+static int   g_sticky_target_idx   = 0;
+static float g_initial_aim_dist    = 0.f;
+static float g_curve_direction     = 1.f;
+static bool  g_aimbot_was_aiming    = false;
+
 static bool  g_trigger_waiting      = false;
 static bool  g_trigger_held         = false;
 static float g_trigger_delay_end    = 0.0f;
@@ -211,8 +216,18 @@ static void triggerbot_tick()
 }
 
 static void aimbot_tick() {
-    if (!g_settings.master_switch || !g_settings.aimbot_enabled) return;
-    if (!(GetAsyncKeyState(g_settings.key_aimbot) & 0x8000)) return;
+    if (!g_settings.master_switch || !g_settings.aimbot_enabled) {
+        g_sticky_target_idx = 0;
+        g_aimbot_was_aiming = false;
+        aim_error_x = aim_error_y = 0.0f;
+        return;
+    }
+    if (!(GetAsyncKeyState(g_settings.key_aimbot) & 0x8000)) {
+        g_sticky_target_idx = 0;
+        g_aimbot_was_aiming = false;
+        aim_error_x = aim_error_y = 0.0f;
+        return;
+    }
 
     AimbotFrame frame = g_aimbot_data.snapshot();
 
@@ -242,6 +257,7 @@ static void aimbot_tick() {
     float best_fov = fov_limit;
     bool  found = false;
     Vec3  best_aim_point{};
+    int   best_target_idx = 0;
 
     for (int i = 1; i < EntityList::MAX_PLAYERS; i++)
     {
@@ -268,6 +284,7 @@ static void aimbot_tick() {
             best_fov       = fov;
             best_aim_point = bone_pos;
             found          = true;
+            best_target_idx = i;
 
             break;
         }
@@ -278,35 +295,130 @@ static void aimbot_tick() {
     {
         AimAngles desired = calculate_angle(eye_pos, best_aim_point);
 
+        // Sticky target / initial distance tracking
+        if (g_sticky_target_idx != best_target_idx || !g_aimbot_was_aiming) {
+            g_sticky_target_idx = best_target_idx;
+            
+            float raw_delta_pitch = desired.pitch - view_angles.pitch;
+            float raw_delta_yaw   = normalize_yaw(desired.yaw - view_angles.yaw);
+            float raw_delta_x     = -raw_delta_yaw / deg_per_pixel;
+            float raw_delta_y     = raw_delta_pitch / deg_per_pixel;
+            
+            g_initial_aim_dist = sqrtf(raw_delta_x * raw_delta_x + raw_delta_y * raw_delta_y);
+            g_curve_direction  = (((float)rand() / RAND_MAX) > 0.5f) ? 1.f : -1.f;
+        }
+        g_aimbot_was_aiming = true;
+
         float delta_pitch = desired.pitch - view_angles.pitch;
         float delta_yaw   = normalize_yaw(desired.yaw - view_angles.yaw);
 
-        if (g_settings.aimbot_smooth > 1.0f)
+        if (g_settings.aimbot_humanized)
         {
-            delta_pitch /= g_settings.aimbot_smooth;
-            delta_yaw   /= g_settings.aimbot_smooth;
+            float deltaX = -delta_yaw   / deg_per_pixel;
+            float deltaY =  delta_pitch / deg_per_pixel;
+            float dist = sqrtf(deltaX * deltaX + deltaY * deltaY);
+
+            if (dist > 0.1f)
+            {
+                // Curved path
+                if (g_settings.aimbot_curve_strength > 0.f && g_initial_aim_dist > 5.f) {
+                    float t = dist / g_initial_aim_dist;
+                    if (t > 1.f) t = 1.f;
+                    
+                    float curveScale = 4.f * t * (1.f - t);
+                    float curveOffsetVal = curveScale * g_settings.aimbot_curve_strength * (g_initial_aim_dist * 0.05f);
+                    
+                    if (curveOffsetVal > g_settings.aimbot_curve_strength * 8.f) 
+                        curveOffsetVal = g_settings.aimbot_curve_strength * 8.f;
+                        
+                    float perpX = -deltaY;
+                    float perpY = deltaX;
+                    float perpLength = sqrtf(perpX * perpX + perpY * perpY);
+                    if (perpLength > 0.1f) {
+                        perpX /= perpLength;
+                        perpY /= perpLength;
+                        
+                        deltaX += perpX * g_curve_direction * curveOffsetVal;
+                        deltaY += perpY * g_curve_direction * curveOffsetVal;
+                        
+                        dist = sqrtf(deltaX * deltaX + deltaY * deltaY);
+                    }
+                }
+
+                // Smoothing with ease-in / ease-out
+                float currentSmooth = g_settings.aimbot_smooth;
+                float fov_in_pixels = fov_limit / deg_per_pixel;
+                if (fov_in_pixels < 1.0f) fov_in_pixels = 1.0f;
+                float normDist = dist / fov_in_pixels;
+                if (normDist > 1.f) normDist = 1.f;
+                
+                float easeOutTerm = (1.f - normDist) * g_settings.aimbot_ease_out * 12.f;
+                float easeInTerm = normDist * g_settings.aimbot_ease_in * 6.f;
+                
+                currentSmooth = g_settings.aimbot_smooth * (1.f + easeOutTerm + easeInTerm);
+                if (currentSmooth < 1.f) currentSmooth = 1.f;
+
+                float move_x = deltaX / currentSmooth;
+                float move_y = deltaY / currentSmooth;
+
+                aim_error_x += move_x;
+                aim_error_y += move_y;
+
+                // Micro-jitter
+                if (g_settings.aimbot_jitter > 0.f && dist > 1.f) {
+                    float jitterX = (((float)rand() / RAND_MAX) * 2.f - 1.f) * g_settings.aimbot_jitter;
+                    float jitterY = (((float)rand() / RAND_MAX) * 2.f - 1.f) * g_settings.aimbot_jitter;
+                    aim_error_x += jitterX;
+                    aim_error_y += jitterY;
+                }
+
+                int dx = static_cast<int>(aim_error_x);
+                int dy = static_cast<int>(aim_error_y);
+
+                // Overshoot prevention
+                if (abs(dx) > (int)(fabsf(deltaX) + 1.f)) dx = (int)deltaX;
+                if (abs(dy) > (int)(fabsf(deltaY) + 1.f)) dy = (int)deltaY;
+
+                aim_error_x -= static_cast<float>(dx);
+                aim_error_y -= static_cast<float>(dy);
+
+                if (dx != 0 || dy != 0)
+                {
+                    g_input.inject_mouse(dx, dy, Input::move);
+                }
+            }
         }
-
-        float move_x = -delta_yaw   / deg_per_pixel;
-        float move_y =  delta_pitch / deg_per_pixel;
-
-        aim_error_x += move_x;
-        aim_error_y += move_y;
-
-        int dx = static_cast<int>(aim_error_x);
-        int dy = static_cast<int>(aim_error_y);
-
-        aim_error_x -= static_cast<float>(dx);
-        aim_error_y -= static_cast<float>(dy);
-
-        if (dx != 0 || dy != 0)
+        else
         {
-            g_input.inject_mouse(dx, dy, Input::move);
+            if (g_settings.aimbot_smooth > 1.0f)
+            {
+                delta_pitch /= g_settings.aimbot_smooth;
+                delta_yaw   /= g_settings.aimbot_smooth;
+            }
+
+            float move_x = -delta_yaw   / deg_per_pixel;
+            float move_y =  delta_pitch / deg_per_pixel;
+
+            aim_error_x += move_x;
+            aim_error_y += move_y;
+
+            int dx = static_cast<int>(aim_error_x);
+            int dy = static_cast<int>(aim_error_y);
+
+            aim_error_x -= static_cast<float>(dx);
+            aim_error_y -= static_cast<float>(dy);
+
+            if (dx != 0 || dy != 0)
+            {
+                g_input.inject_mouse(dx, dy, Input::move);
+            }
         }
     }
     else
     {
         aim_error_x = aim_error_y = 0.0f;
+        g_sticky_target_idx = 0;
+        g_aimbot_was_aiming = false;
     }
 }
 

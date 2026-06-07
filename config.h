@@ -161,6 +161,11 @@ public:
         write(f, "key_aimbot", g_settings.key_aimbot);
         write(f, "aimbot_smooth", g_settings.aimbot_smooth);
         write(f, "aimbot_head_only", g_settings.aimbot_head_only);
+        write(f, "aimbot_humanized", g_settings.aimbot_humanized);
+        write(f, "aimbot_jitter", g_settings.aimbot_jitter);
+        write(f, "aimbot_curve_strength", g_settings.aimbot_curve_strength);
+        write(f, "aimbot_ease_in", g_settings.aimbot_ease_in);
+        write(f, "aimbot_ease_out", g_settings.aimbot_ease_out);
 
         f << "\n[Triggerbot]\n";
         write(f, "triggerbot_enabled", g_settings.triggerbot_enabled);
@@ -313,6 +318,11 @@ public:
         read(kv, "key_aimbot", g_settings.key_aimbot);
         read(kv, "aimbot_smooth", g_settings.aimbot_smooth);
         read(kv, "aimbot_head_only", g_settings.aimbot_head_only);
+        read(kv, "aimbot_humanized", g_settings.aimbot_humanized);
+        read(kv, "aimbot_jitter", g_settings.aimbot_jitter);
+        read(kv, "aimbot_curve_strength", g_settings.aimbot_curve_strength);
+        read(kv, "aimbot_ease_in", g_settings.aimbot_ease_in);
+        read(kv, "aimbot_ease_out", g_settings.aimbot_ease_out);
 
         read(kv, "triggerbot_enabled", g_settings.triggerbot_enabled);
         read(kv, "key_triggerbot", g_settings.key_triggerbot);
