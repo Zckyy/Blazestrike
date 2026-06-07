@@ -413,7 +413,7 @@ private:
         ImGui::Checkbox("Enable aimbot", &g_settings.aimbot_enabled);
 
         if (g_settings.aimbot_enabled) {
-            render_key_bind("Key",  g_settings.key_aimbot, bind_waiting_aimbot);
+            render_key_combo("Key",  g_settings.key_aimbot);
             ImGui::SliderInt("Fov", &g_settings.aimbot_fov, 1, 360);
             ImGui::SliderFloat("Smoothing", &g_settings.aimbot_smooth, 1.0f, 20.0f, "%.1f");
             ImGui::Checkbox("Head only", &g_settings.aimbot_head_only);
@@ -435,7 +435,7 @@ private:
 
         if (g_settings.triggerbot_enabled)
         {
-            render_key_bind("Trigger key", g_settings.key_triggerbot, bind_waiting_trigger);
+            render_key_combo("Trigger key", g_settings.key_triggerbot);
             ImGui::SliderInt("Delay ms", &g_settings.triggerbot_delay, 0, 300);
             ImGui::Checkbox("Head only##trigger", &g_settings.triggerbot_head_only);
         }
@@ -653,6 +653,45 @@ private:
 
         if (ImGui::SliderFloat("Menu Font Size", &g_settings.menu_font_size, 10.0f, 22.0f, "%.0f"))
             g_overlay.font_rebuild_needed = true;
+    }
+
+    struct KeyBindOption {
+        const char* name;
+        int vk_code;
+    };
+
+    void render_key_combo(const char* label, int& current_key) {
+        static constexpr KeyBindOption keybind_options[] = {
+            { "Mouse 1", VK_LBUTTON },
+            { "Mouse 2", VK_RBUTTON },
+            { "Middle Mouse", VK_MBUTTON },
+            { "Mouse 4", VK_XBUTTON1 },
+            { "Mouse 5", VK_XBUTTON2 },
+            { "Alt", VK_MENU },
+            { "Shift", VK_SHIFT },
+            { "Caps", VK_CAPITAL }
+        };
+
+        const char* preview = "None";
+        for (const auto& opt : keybind_options) {
+            if (opt.vk_code == current_key) {
+                preview = opt.name;
+                break;
+            }
+        }
+
+        if (ImGui::BeginCombo(label, preview)) {
+            for (const auto& opt : keybind_options) {
+                bool is_selected = (opt.vk_code == current_key);
+                if (ImGui::Selectable(opt.name, is_selected)) {
+                    current_key = opt.vk_code;
+                }
+                if (is_selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
     }
 
     void render_key_bind(const char* label, int& key, bool& waiting, bool allow_mouse1 = false) {
