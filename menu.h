@@ -68,6 +68,16 @@ private:
     bool bind_waiting_aimbot = false;
     bool bind_waiting_trigger = false;
 
+    void add_tooltip(const char* desc) {
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextUnformatted(desc);
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+    }
+
     void render_tab_main() {
         ImGui::Spacing();
         ImGui::Text("Status:");
@@ -81,20 +91,26 @@ private:
         ImGui::Text("Key Binds");
         ImGui::Spacing();
         render_key_bind("Menu Toggle", g_settings.key_menu, bind_waiting_menu);
+        add_tooltip("Hotkey to open and close this settings menu window.");
         render_key_bind("Master Toggle", g_settings.key_master, bind_waiting_master);
+        add_tooltip("Global hotkey to quickly enable or disable all features at once.");
         render_key_bind("Exit", g_settings.key_exit, bind_waiting_exit);
+        add_tooltip("Hotkey to safely exit the application.");
 
         ImGui::Separator();
         ImGui::Text("Performance");
         ImGui::Checkbox("Vsync", &g_settings.use_vsync);
+        add_tooltip("Enable Vertical Sync to synchronize refresh rate with your monitor, reducing tearing and GPU usage.");
 
         ImGui::BeginDisabled(g_settings.use_vsync);
         ImGui::SliderFloat("Target FPS", &g_settings.target_fps, 30, 1000, "%.0f");
+        add_tooltip("Overlay refresh rate. Higher values make ESP drawing smoother at the cost of slightly higher CPU usage.");
         ImGui::EndDisabled();
         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1}, "Higher = smoother ESP");
 
         ImGui::Separator();
         if (ImGui::Button("Reset All Settings")) reset_popup_open = true;
+        add_tooltip("Revert all configurations, colors, and hotkeys to their default values.");
         if (reset_popup_open) {
             ImGui::OpenPopup("Reset?##confirm");
             reset_popup_open = false;
@@ -388,53 +404,81 @@ private:
     void render_tab_radar() {
         ImGui::Spacing();
         ImGui::Checkbox("Show Radar", &g_settings.draw_radar);
+        add_tooltip("Render a 2D overlay minimap showing player locations.");
         ImGui::Separator();
         ImGui::Checkbox("Circle Shape", &g_settings.radar_circle);
+        add_tooltip("Render the radar as a circular window instead of a square.");
         ImGui::Checkbox("Rotate with View", &g_settings.radar_rotate);
+        add_tooltip("Rotate the radar map dynamically with your player's camera view angle.");
         ImGui::Checkbox("Range Rings", &g_settings.radar_rings);
+        add_tooltip("Draw distance helper concentric rings on the radar.");
         ImGui::Checkbox("Player Names", &g_settings.radar_names);
+        add_tooltip("Show player name tags next to their dots on the radar.");
         if (g_settings.radar_names) {
             ImGui::Indent();
             if (ImGui::SliderFloat("Names Font##rnf", &g_settings.radar_names_font_size, 8.0f, 20.0f, "%.0f")) {
                 g_overlay.font_rebuild_needed = true;
             }
+            add_tooltip("Font size for the radar player names.");
             ImGui::Unindent();
         }
         ImGui::Separator();
         ImGui::SliderFloat("Size", &g_settings.radar_size, 100, 1000, "%.0f");
+        add_tooltip("Width and height size of the radar window.");
         ImGui::SliderFloat("Zoom", &g_settings.radar_zoom, 0.1f, 1.0f, "%.2fx");
+        add_tooltip("Map scale zoom factor.");
         ImGui::SliderFloat("Opacity", &g_settings.radar_bg_alpha, 0.0f, 1.0f, "%.2f");
+        add_tooltip("Opacity level of the radar window background.");
         ImGui::DragFloat("Position X", &g_settings.radar_x, 1, 0, 3000);
+        add_tooltip("Horizontal pixel position coordinate of the radar on your screen.");
         ImGui::DragFloat("Position Y", &g_settings.radar_y, 1, 0, 2000);
+        add_tooltip("Vertical pixel position coordinate of the radar on your screen.");
 
         ImGui::Separator();
         ImGui::Text("Radar Colors");
         ImGui::ColorEdit4("Enemy##re", g_settings.radar_enemy_color,
                           ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+        add_tooltip("Enemy dot color on the radar.");
         ImGui::ColorEdit4("Team##rt", g_settings.radar_team_color,
                           ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_NoInputs);
+        add_tooltip("Teammate dot color on the radar.");
     }
 
     void render_tab_aim() {
-        ImGui::TextColored({1.0f,0.0f,0.0f,1}, "Aim assist can get you VACLIVE banned.");
         ImGui::Checkbox("Enable aimbot", &g_settings.aimbot_enabled);
+        add_tooltip("Automatically snap or smooth your crosshair toward target players when holding the Aimbot Key.");
 
         if (g_settings.aimbot_enabled) {
             render_key_combo("Key",  g_settings.key_aimbot);
+            add_tooltip("The hotkey you must hold down to activate aimbot lock-on.");
             ImGui::SliderInt("Fov", &g_settings.aimbot_fov, 1, 360);
+            add_tooltip("Field of View angle (in degrees) defining the detection cone around your crosshair.");
             ImGui::SliderFloat("Smoothing", &g_settings.aimbot_smooth, 1.0f, 20.0f, "%.1f");
+            add_tooltip("Movement dampening scale. Higher values make the aimbot lock-on look smoother and more legitimate.");
             ImGui::Text("Target Bones:");
-            ImGui::Checkbox("Head##aim", &g_settings.aimbot_aim_head); ImGui::SameLine();
-            ImGui::Checkbox("Neck##aim", &g_settings.aimbot_aim_neck); ImGui::SameLine();
-            ImGui::Checkbox("Chest##aim", &g_settings.aimbot_aim_chest); ImGui::SameLine();
+            ImGui::Checkbox("Head##aim", &g_settings.aimbot_aim_head);
+            add_tooltip("Aimbot target: Head.");
+            ImGui::SameLine();
+            ImGui::Checkbox("Neck##aim", &g_settings.aimbot_aim_neck);
+            add_tooltip("Aimbot target: Neck.");
+            ImGui::SameLine();
+            ImGui::Checkbox("Chest##aim", &g_settings.aimbot_aim_chest);
+            add_tooltip("Aimbot target: Chest.");
+            ImGui::SameLine();
             ImGui::Checkbox("Pelvis##aim", &g_settings.aimbot_aim_pelvis);
+            add_tooltip("Aimbot target: Pelvis.");
             ImGui::Checkbox("Humanized Aim", &g_settings.aimbot_humanized);
+            add_tooltip("Enable organic aim curves, jitter, and ease transitions to simulate natural mouse input.");
             if (g_settings.aimbot_humanized) {
                 ImGui::Indent();
                 ImGui::SliderFloat("Curve Strength", &g_settings.aimbot_curve_strength, 0.0f, 15.0f, "%.1f");
+                add_tooltip("Maximum curvature deviation from a straight line path to the target.");
                 ImGui::SliderFloat("Jitter", &g_settings.aimbot_jitter, 0.0f, 10.0f, "%.1f");
+                add_tooltip("Amount of micro-movements/random offset added to target tracking.");
                 ImGui::SliderFloat("Ease-In", &g_settings.aimbot_ease_in, 0.0f, 1.0f, "%.2f");
+                add_tooltip("Dampening coefficient applied when starting mouse movement.");
                 ImGui::SliderFloat("Ease-Out", &g_settings.aimbot_ease_out, 0.0f, 1.0f, "%.2f");
+                add_tooltip("Dampening coefficient applied when approaching the target bone.");
                 ImGui::Unindent();
             }
         }
@@ -443,12 +487,16 @@ private:
         ImGui::Spacing();
 
         ImGui::Checkbox("Enable triggerbot", &g_settings.triggerbot_enabled);
+        add_tooltip("Automatically fire weapons when an enemy player model crosses directly underneath your crosshair.");
 
         if (g_settings.triggerbot_enabled)
         {
             render_key_combo("Trigger key", g_settings.key_triggerbot);
+            add_tooltip("The hotkey you must hold down to engage triggerbot automatic firing.");
             ImGui::SliderInt("Delay ms", &g_settings.triggerbot_delay, 0, 300);
+            add_tooltip("Delay interval in milliseconds before firing after an enemy crosses your crosshair.");
             ImGui::Checkbox("Head only##trigger", &g_settings.triggerbot_head_only);
+            add_tooltip("Only trigger shot if the crosshair is placed over the enemy's head bone.");
         }
 
         ImGui::Separator();
@@ -457,13 +505,18 @@ private:
     void render_tab_rcs() {
         ImGui::Spacing();
         ImGui::Checkbox("Enable Recoil Control", &g_settings.rcs_enabled);
+        add_tooltip("Automatically pull down/compensate weapon recoil pattern when firing.");
 
         if (g_settings.rcs_enabled) {
             ImGui::Indent();
             ImGui::Checkbox("Only whilst aiming", &g_settings.rcs_only_while_aiming);
+            add_tooltip("Only apply recoil control compensation when the Aimbot is actively locking onto a target.");
             ImGui::SliderInt("Start Bullet", &g_settings.rcs_bullet, 1, 30);
+            add_tooltip("The bullet count at which RCS compensation begins (1 = immediately on first shot).");
             ImGui::SliderFloat("RCS Scale X", &g_settings.rcs_scale_x, 0.0f, 2.0f, "%.2f");
+            add_tooltip("Horizontal compensation strength multiplier.");
             ImGui::SliderFloat("RCS Scale Y", &g_settings.rcs_scale_y, 0.0f, 2.0f, "%.2f");
+            add_tooltip("Vertical compensation strength multiplier.");
             ImGui::Unindent();
         }
 
@@ -475,19 +528,26 @@ private:
 
         ImGui::Text("Overlay Boxes");
         ImGui::Checkbox("Show Bomb Timer", &g_settings.bomb_timer_enabled);
+        add_tooltip("Show active C4 detonation/defusal time status window on screen.");
         ImGui::Checkbox("Show Vote Teller", &g_settings.vote_teller_enabled);
+        add_tooltip("Show active in-game vote details and counts overlay window.");
         ImGui::Checkbox("Enemy Player Info Box", &g_settings.enemy_info_box_enabled);
+        add_tooltip("Show a panel containing weapon details and HP stats of the target enemy player.");
 
         ImGui::Separator();
 
         ImGui::Text("Spectator List");
         ImGui::Checkbox("Show Spectators", &g_settings.draw_spectators);
+        add_tooltip("Display names of players currently spectating your camera view.");
         if (g_settings.draw_spectators) {
             ImGui::Indent();
             ImGui::DragFloat("Spec X##sx", &g_settings.spec_x, 1, -1, 3000, "%.0f");
+            add_tooltip("Horizontal pixel coordinate for the spectator list window (-1 for auto positioning).");
             ImGui::SameLine();
             if (ImGui::Button("Auto##specauto")) g_settings.spec_x = -1.0f;
+            add_tooltip("Reset spectator window position back to default automatic placement.");
             ImGui::DragFloat("Spec Y##sy", &g_settings.spec_y, 1, 0, 2000, "%.0f");
+            add_tooltip("Vertical pixel coordinate for the spectator list window.");
             ImGui::Unindent();
         }
 
@@ -495,40 +555,62 @@ private:
 
         ImGui::Text("Crosshair");
         ImGui::Checkbox("Enabled##xhair", &g_settings.crosshair_enabled);
+        add_tooltip("Render a custom screen-centered crosshair overlay.");
         if (g_settings.crosshair_enabled) {
             ImGui::Indent();
             ImGui::Text("Shape:");
-            ImGui::RadioButton("+##xs", &g_settings.crosshair_shape, 0); ImGui::SameLine();
-            ImGui::RadioButton("T##xs", &g_settings.crosshair_shape, 1); ImGui::SameLine();
-            ImGui::RadioButton("O##xs", &g_settings.crosshair_shape, 2); ImGui::SameLine();
-            ImGui::RadioButton("Dot##xs", &g_settings.crosshair_shape, 3); ImGui::SameLine();
-            ImGui::RadioButton("+O##xs", &g_settings.crosshair_shape, 4); ImGui::SameLine();
+            ImGui::RadioButton("+##xs", &g_settings.crosshair_shape, 0);
+            add_tooltip("Classic cross shape.");
+            ImGui::SameLine();
+            ImGui::RadioButton("T##xs", &g_settings.crosshair_shape, 1);
+            add_tooltip("T-shaped crosshair.");
+            ImGui::SameLine();
+            ImGui::RadioButton("O##xs", &g_settings.crosshair_shape, 2);
+            add_tooltip("Circular crosshair shape.");
+            ImGui::SameLine();
+            ImGui::RadioButton("Dot##xs", &g_settings.crosshair_shape, 3);
+            add_tooltip("Single center point dot crosshair.");
+            ImGui::SameLine();
+            ImGui::RadioButton("+O##xs", &g_settings.crosshair_shape, 4);
+            add_tooltip("Cross shape inside a circle.");
 
             ImGui::ColorEdit4("Color##xcol", g_settings.crosshair_color, ImGuiColorEditFlags_NoInputs);
+            add_tooltip("Set primary crosshair color.");
             ImGui::SliderFloat("Size##xsz", &g_settings.crosshair_size, 0.5f, 20, "%.1f");
+            add_tooltip("Adjust crosshair line length/size.");
             ImGui::SliderFloat("Thick##xth", &g_settings.crosshair_thickness, 0.5f, 5, "%.1f");
+            add_tooltip("Adjust crosshair line thickness.");
 
             bool has_gap = g_settings.crosshair_shape <= 1 ||
                            g_settings.crosshair_shape == 4 ||
                            g_settings.crosshair_shape == 6;
-            if (has_gap)
+            if (has_gap) {
                 ImGui::SliderFloat("Gap##xgap", &g_settings.crosshair_gap, -10, 10, "%.1f");
+                add_tooltip("Adjust center gap distance.");
+            }
 
             ImGui::Checkbox("Outline##xol", &g_settings.crosshair_outline);
+            add_tooltip("Draw a dark border outline around crosshair lines for better contrast.");
             if (g_settings.crosshair_outline) {
                 ImGui::ColorEdit4("OL Color##xolc", g_settings.crosshair_outline_color, ImGuiColorEditFlags_NoInputs);
+                add_tooltip("Color of the crosshair outline border.");
                 ImGui::SliderFloat("OL Width##xolt", &g_settings.crosshair_outline_thickness, 1, 3, "%.0f");
+                add_tooltip("Thickness of the crosshair outline border.");
             }
             if (g_settings.crosshair_shape != 3) {
                 ImGui::Checkbox("Center Dot##xdot", &g_settings.crosshair_dot);
-                if (g_settings.crosshair_dot)
+                add_tooltip("Draw a center dot in the middle of the crosshair lines.");
+                if (g_settings.crosshair_dot) {
                     ImGui::SliderFloat("Dot Size##xds", &g_settings.crosshair_dot_size, 1, 4, "%.0f");
+                    add_tooltip("Adjust size of the center dot.");
+                }
             }
 
             ImGui::Separator();
             ImVec2 pp = ImGui::GetCursorScreenPos();
             float psz = 60;
             ImGui::InvisibleButton("##xprev", {psz, psz});
+            add_tooltip("Live interactive preview of your custom crosshair design.");
             ImDrawList* dl = ImGui::GetWindowDrawList();
             dl->AddRectFilled(pp, {pp.x + psz, pp.y + psz}, IM_COL32(20, 20, 20, 255));
             dl->AddRect(pp, {pp.x + psz, pp.y + psz}, IM_COL32(50, 50, 50, 255));
@@ -553,9 +635,10 @@ private:
         }
     }
 
-        void render_tab_nades() {
+    void render_tab_nades() {
         ImGui::Spacing();
         ImGui::Checkbox("Grenade Helper", &g_settings.grenade_helper_enabled);
+        add_tooltip("Enable grenade lineup assistant to view positions, throw types, and target angles.");
 
         if (!g_settings.grenade_helper_enabled) {
             ImGui::TextColored({0.5f,0.5f,0.5f,1},
@@ -574,45 +657,59 @@ private:
         // Key binds
         ImGui::Text("Key Binds");
         render_key_bind("Toggle Visible",  g_settings.key_grenade_toggle, bind_waiting_nade_toggle);
+        add_tooltip("Hotkey to toggle visibility of grenade spots overlays.");
         render_key_bind("Add Spot",        g_settings.key_grenade_add,    bind_waiting_nade_add);
+        add_tooltip("Hotkey to save current camera/player position as a new custom grenade spot lineup.");
         render_key_bind("Delete Spot",     g_settings.key_grenade_delete, bind_waiting_nade_delete);
+        add_tooltip("Hotkey to delete the nearest custom grenade lineup spot.");
         ImGui::Separator();
 
         // Filters
         ImGui::Text("Filters");
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.70f,0.70f,0.70f,1));
         ImGui::Checkbox("Smoke##nf",   &g_settings.grenade_filter_smoke);
+        add_tooltip("Filter: Show Smokes.");
         ImGui::SameLine();
         ImGui::PopStyleColor();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.00f,0.47f,0.12f,1));
         ImGui::Checkbox("Molotov##nf", &g_settings.grenade_filter_molotov);
+        add_tooltip("Filter: Show Molotovs.");
         ImGui::SameLine();
         ImGui::PopStyleColor();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.31f,0.86f,0.31f,1));
         ImGui::Checkbox("Frag##nf",    &g_settings.grenade_filter_frag);
+        add_tooltip("Filter: Show Frag Grenades.");
         ImGui::SameLine();
         ImGui::PopStyleColor();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.00f,1.00f,0.39f,1));
         ImGui::Checkbox("Flash##nf",   &g_settings.grenade_filter_flash);
+        add_tooltip("Filter: Show Flashbangs.");
         ImGui::PopStyleColor();
         ImGui::Separator();
 
         // Appearance
         ImGui::Text("Appearance");
         ImGui::SliderFloat("Circle Radius##nc",    &g_settings.grenade_circle_radius,    10.0f, 150.0f, "%.0f");
+        add_tooltip("Radius size of grenade spot indicator markers.");
         ImGui::SliderFloat("Circle Thickness##nc", &g_settings.grenade_circle_thickness,  0.5f,   4.0f, "%.1f");
+        add_tooltip("Line outline thickness of grenade spot indicator markers.");
         if (ImGui::SliderFloat("Text Size##nc",        &g_settings.grenade_text_font_size,    8.0f,  20.0f, "%.0f")) {
             g_overlay.font_rebuild_needed = true;
         }
+        add_tooltip("Font size of grenade helper text overlays.");
         ImGui::Spacing();
         ImGui::ColorEdit4("Circle##ncc",        g_settings.grenade_circle_color,
                           ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+        add_tooltip("Color of inactive/out-of-range grenade lineup circles.");
         ImGui::ColorEdit4("Active Circle##nac", g_settings.grenade_circle_active_color,
                           ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+        add_tooltip("Color of the active grenade lineup circle when standing directly on it.");
         ImGui::ColorEdit4("Aim Line##nal",      g_settings.grenade_aim_line_color,
                           ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+        add_tooltip("Color of alignment crosshair indicator guide.");
         ImGui::ColorEdit4("Text##ntc",          g_settings.grenade_text_color,
                           ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+        add_tooltip("Color of text info labels.");
         ImGui::Separator();
 
         // Spot list for current map
@@ -630,9 +727,12 @@ private:
         bool style_changed = false;
         style_changed |= ImGui::ColorEdit4("Accent Color", g_settings.menu_accent_color,
                                             ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+        add_tooltip("Set primary accent color for window title and highlighted controls.");
         style_changed |= ImGui::ColorEdit4("Border Color", g_settings.menu_border_color,
                                             ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+        add_tooltip("Set border color of the settings panel.");
         style_changed |= ImGui::SliderFloat("BG Opacity", &g_settings.menu_bg_alpha, 0.3f, 1.0f, "%.2f");
+        add_tooltip("Set transparency value of the settings window background.");
 
         ImGui::Separator();
         ImGui::Text("Presets:");
@@ -642,6 +742,7 @@ private:
             memcpy(g_settings.menu_border_color, b, 16);
             g_settings.menu_bg_alpha = 0.92f; style_changed = true;
         }
+        add_tooltip("Apply Cyber Green style preset.");
         ImGui::SameLine();
         if (ImGui::Button("Blood Red", {120, 0})) {
             float cc[] = {1, 0.2f, 0.15f, 1}; float b[] = {1, 0.2f, 0.15f, 0.3f};
@@ -649,6 +750,7 @@ private:
             memcpy(g_settings.menu_border_color, b, 16);
             g_settings.menu_bg_alpha = 0.92f; style_changed = true;
         }
+        add_tooltip("Apply Blood Red style preset.");
         ImGui::SameLine();
         if (ImGui::Button("Electric Blue", {120, 0})) {
             float cc[] = {0.2f, 0.5f, 1, 1}; float b[] = {0.2f, 0.5f, 1, 0.3f};
@@ -656,12 +758,14 @@ private:
             memcpy(g_settings.menu_border_color, b, 16);
             g_settings.menu_bg_alpha = 0.92f; style_changed = true;
         }
+        add_tooltip("Apply Electric Blue style preset.");
         if (ImGui::Button("Purple Haze", {120, 0})) {
             float cc[] = {0.7f, 0.3f, 1, 1}; float b[] = {0.7f, 0.3f, 1, 0.3f};
             memcpy(g_settings.menu_accent_color, cc, 16);
             memcpy(g_settings.menu_border_color, b, 16);
             g_settings.menu_bg_alpha = 0.90f; style_changed = true;
         }
+        add_tooltip("Apply Purple Haze style preset.");
         ImGui::SameLine();
         if (ImGui::Button("Gold", {120, 0})) {
             float cc[] = {1, 0.8f, 0.2f, 1}; float b[] = {1, 0.8f, 0.2f, 0.3f};
@@ -669,6 +773,7 @@ private:
             memcpy(g_settings.menu_border_color, b, 16);
             g_settings.menu_bg_alpha = 0.92f; style_changed = true;
         }
+        add_tooltip("Apply Gold style preset.");
         ImGui::SameLine();
         if (ImGui::Button("Minimal", {120, 0})) {
             float cc[] = {0.7f, 0.7f, 0.7f, 1}; float b[] = {0.4f, 0.4f, 0.4f, 0.2f};
@@ -676,6 +781,7 @@ private:
             memcpy(g_settings.menu_border_color, b, 16);
             g_settings.menu_bg_alpha = 0.88f; style_changed = true;
         }
+        add_tooltip("Apply Minimal style preset.");
 
         if (style_changed)
             g_overlay.apply_menu_style();
@@ -684,9 +790,11 @@ private:
 
         ImGui::Text("Menu Font");
         render_menu_font_selector();
+        add_tooltip("Select font used for the menu text.");
 
         if (ImGui::SliderFloat("Menu Font Size", &g_settings.menu_font_size, 10.0f, 22.0f, "%.0f"))
             g_overlay.font_rebuild_needed = true;
+        add_tooltip("Adjust the menu font scale.");
     }
 
     struct KeyBindOption {
