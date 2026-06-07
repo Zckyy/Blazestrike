@@ -31,7 +31,7 @@ public:
         ImGui::PushFont(g_overlay.menu_title_font);
         ImVec4 accent = {g_settings.menu_accent_color[0], g_settings.menu_accent_color[1],
                          g_settings.menu_accent_color[2], g_settings.menu_accent_color[3]};
-        ImGui::TextColored(accent, "CS2 ESP");
+        ImGui::TextColored(accent, "BlazeStrike");
         ImGui::SameLine(ImGui::GetWindowWidth() - 130);
         if (g_settings.master_switch)
             ImGui::TextColored({0.3f, 1.0f, 0.3f, 1}, "[ACTIVE]");
@@ -91,19 +91,6 @@ private:
         ImGui::SliderFloat("Target FPS", &g_settings.target_fps, 30, 1000, "%.0f");
         ImGui::EndDisabled();
         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1}, "Higher = smoother ESP");
-
-        ImGui::Text("Memory backend");
-
-        static bool backend_changed = false;
-
-        backend_changed |= ImGui::RadioButton("WinApi", &g_settings.memory_backend, 0);
-        ImGui::SameLine();
-        backend_changed |= ImGui::RadioButton("Syscall", &g_settings.memory_backend, 1);
-        ImGui::SameLine();
-        backend_changed |= ImGui::RadioButton("Kernel", &g_settings.memory_backend, 2);
-
-        if (backend_changed)
-            ImGui::TextColored(ImVec4(1,0.4f,0.2f,1), "Restart required to apply");
 
         ImGui::Separator();
         if (ImGui::Button("Reset All Settings")) reset_popup_open = true;
