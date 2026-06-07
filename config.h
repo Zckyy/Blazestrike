@@ -34,6 +34,9 @@ public:
         write(f, "draw_money",             g_settings.draw_money);
         write(f, "draw_scoped",            g_settings.draw_scoped);
         write(f, "draw_flashed",           g_settings.draw_flashed);
+        write(f, "draw_snaplines",         g_settings.draw_snaplines);
+        write(f, "snapline_origin",        g_settings.snapline_origin);
+        write_arr(f, "snapline_color",     g_settings.snapline_color, 4);
 
         f << "\n[Font]\n";
         write(f, "esp_font_index", g_settings.esp_font_index);
@@ -221,6 +224,9 @@ public:
         read(kv, "draw_money",             g_settings.draw_money);
         read(kv, "draw_scoped",            g_settings.draw_scoped);
         read(kv, "draw_flashed",           g_settings.draw_flashed);
+        read(kv, "draw_snaplines",         g_settings.draw_snaplines);
+        read(kv, "snapline_origin",        g_settings.snapline_origin);
+        read_arr(kv, "snapline_color",     g_settings.snapline_color, 4);
         read(kv,     "healthbar_solid_color", g_settings.healthbar_solid_color);
         read_arr(kv, "healthbar_color",     g_settings.healthbar_color, 4);
         read(kv, "draw_box", g_settings.draw_box);

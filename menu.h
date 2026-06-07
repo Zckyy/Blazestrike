@@ -319,6 +319,22 @@ private:
                 ImGui::ColorEdit4("Shadow##wsc", g_settings.weapon_shadow_color,
                                   ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
         }
+        // ================================================================
+        //  SNAPLINES / TRACERS
+        // ================================================================
+        ImGui::Checkbox("Snaplines / Tracers", &g_settings.draw_snaplines);
+        if (g_settings.draw_snaplines) {
+            ImGui::Indent();
+            ImGui::Text("Origin:");
+            ImGui::RadioButton("Bottom##so", &g_settings.snapline_origin, 0); ImGui::SameLine();
+            ImGui::RadioButton("Center##so", &g_settings.snapline_origin, 1); ImGui::SameLine();
+            ImGui::RadioButton("Top##so",    &g_settings.snapline_origin, 2);
+            if (!g_settings.esp_use_theme) {
+                ImGui::ColorEdit4("Color##socol", g_settings.snapline_color,
+                                  ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+            }
+            ImGui::Unindent();
+        }
         ImGui::Separator();
 
         // ================================================================

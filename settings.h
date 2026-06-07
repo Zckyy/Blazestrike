@@ -20,6 +20,9 @@ struct MenuSettings {
     bool draw_spectators = true;
     bool draw_radar = true;
     int chams_style = 3;
+    bool draw_snaplines = false;
+    int snapline_origin = 0; // 0 = Bottom, 1 = Center, 2 = Top
+    float snapline_color[4] = {0.0f, 0.9f, 1.0f, 0.5f};
 
     bool use_vsync = true;
     float target_fps = 1000.0f;
@@ -253,6 +256,8 @@ namespace EspTheme {
             derive(t, 1.05f, 0.85f, g_settings.healthbar_color);
             // HP text: bright theme hue, slightly dimmer than name
             derive(t, 1.05f, 0.86f, g_settings.hp_text_color);
+            // Snaplines/tracers: derived from theme hue
+            derive(t, 0.85f, 0.60f, g_settings.snapline_color);
         } else {
             derive_team(t, 0.55f, 0.40f, g_settings.team_outline);
             derive_team(t, 0.28f, 0.28f, g_settings.team_fill);
