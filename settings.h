@@ -193,6 +193,9 @@ struct MenuSettings {
     int menu_font_index = -1;
     float menu_font_size = 14.0f;
 
+    // Moving Cat GIF setting
+    bool moving_cat = false;
+
     // Key binds
     int key_menu = VK_INSERT;
     int key_master = VK_DELETE;

@@ -163,6 +163,7 @@ public:
         write_arr(f, "menu_border_color", g_settings.menu_border_color, 4);
         write(f, "menu_font_index", g_settings.menu_font_index);
         write(f, "menu_font_size", g_settings.menu_font_size);
+        write(f, "moving_cat", g_settings.moving_cat);
 
         f << "\n[Aimbot]\n";
         write(f, "aimbot_enabled", g_settings.aimbot_enabled);
@@ -340,6 +341,7 @@ public:
         read_arr(kv, "menu_border_color", g_settings.menu_border_color, 4);
         read(kv, "menu_font_index", g_settings.menu_font_index);
         read(kv, "menu_font_size", g_settings.menu_font_size);
+        read(kv, "moving_cat", g_settings.moving_cat);
 
         read(kv, "aimbot_enabled", g_settings.aimbot_enabled);
         read(kv, "aimbot_fov", g_settings.aimbot_fov);

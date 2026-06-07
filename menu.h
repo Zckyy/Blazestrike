@@ -54,19 +54,74 @@ public:
 
         ImGui::End();
 
-        // Render the spinning cat GIF outside the main window, centered over the sidebar
+        // Render the spinning cat GIF outside the main window
         auto srv = g_menu_cat_gif.get_current_frame((float)ImGui::GetTime());
         if (srv) {
             float gif_w = g_menu_cat_gif.width > 0 ? (float)g_menu_cat_gif.width : 200.0f;
             float gif_h = g_menu_cat_gif.height > 0 ? (float)g_menu_cat_gif.height : 200.0f;
             
-            // Align horizontally with the center of the sidebar.
-            // Sidebar starts at pos.x + 14 (WindowPadding.x).
-            // Sidebar width is SIDEBAR_WIDTH (172.0f).
-            float sidebar_center_x = pos.x + 14.0f + (SIDEBAR_WIDTH * 0.5f);
-            float gif_x = sidebar_center_x - (gif_w * 0.5f);
-            float gap = 0.0f; // Gap between gif and window
-            float gif_y = pos.y - gif_h - gap;
+            float gif_x = 0.0f;
+            float gif_y = 0.0f;
+
+            if (g_settings.moving_cat) {
+                float dt = ImGui::GetIO().DeltaTime;
+                // Clamp dt to avoid huge jumps on startup
+                if (dt > 0.1f) dt = 0.1f;
+
+                if (!cat_pos_initialized) {
+                    // Start at the center of the screen
+                    cat_pos_x = (g_overlay.width - gif_w) * 0.5f;
+                    cat_pos_y = (g_overlay.height - gif_h) * 0.5f;
+                    cat_vel_x = 180.0f;
+                    cat_vel_y = 130.0f;
+                    cat_pos_initialized = true;
+                }
+
+                // Update positions
+                cat_pos_x += cat_vel_x * dt;
+                cat_pos_y += cat_vel_y * dt;
+
+                float max_x = (float)g_overlay.width - gif_w;
+                float max_y = (float)g_overlay.height - gif_h;
+
+                // Bounce off left/right
+                if (cat_pos_x <= 0.0f) {
+                    cat_pos_x = 0.0f;
+                    cat_vel_x = -cat_vel_x;
+                } else if (cat_pos_x >= max_x) {
+                    if (max_x > 0.0f) {
+                        cat_pos_x = max_x;
+                        cat_vel_x = -cat_vel_x;
+                    } else {
+                        cat_pos_x = 0.0f;
+                    }
+                }
+
+                // Bounce off top/bottom
+                if (cat_pos_y <= 0.0f) {
+                    cat_pos_y = 0.0f;
+                    cat_vel_y = -cat_vel_y;
+                } else if (cat_pos_y >= max_y) {
+                    if (max_y > 0.0f) {
+                        cat_pos_y = max_y;
+                        cat_vel_y = -cat_vel_y;
+                    } else {
+                        cat_pos_y = 0.0f;
+                    }
+                }
+
+                gif_x = cat_pos_x;
+                gif_y = cat_pos_y;
+            } else {
+                // Reset flag when disabled
+                cat_pos_initialized = false;
+
+                // Align horizontally with the center of the sidebar
+                float sidebar_center_x = pos.x + 14.0f + (SIDEBAR_WIDTH * 0.5f);
+                gif_x = sidebar_center_x - (gif_w * 0.5f);
+                float gap = 0.0f; // Gap between gif and window
+                gif_y = pos.y - gif_h - gap;
+            }
 
             ImGui::SetNextWindowPos({gif_x, gif_y});
             ImGui::SetNextWindowSize({gif_w, gif_h});
@@ -110,6 +165,13 @@ private:
     };
 
     float nav_anim[NAV_COUNT] = {};
+
+    // Moving Cat GIF state
+    float cat_pos_x = 0.0f;
+    float cat_pos_y = 0.0f;
+    float cat_vel_x = 180.0f;
+    float cat_vel_y = 130.0f;
+    bool cat_pos_initialized = false;
 
     bool bind_waiting_menu = false;
     bool bind_waiting_master = false;
@@ -1081,6 +1143,10 @@ private:
         if (ImGui::SliderFloat("Menu Font Size", &g_settings.menu_font_size, 10.0f, 22.0f, "%.0f"))
             g_overlay.font_rebuild_needed = true;
         add_tooltip("Adjust the menu font scale.");
+
+        ImGui::Separator();
+        ImGui::Checkbox("Moving Cat", &g_settings.moving_cat);
+        add_tooltip("Make the spinning orange cat bounce around the screen like a DVD screensaver.");
     }
 
     struct KeyBindOption {
